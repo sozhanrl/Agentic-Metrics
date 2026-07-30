@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app import crud, schemas
+from app import crud, models, schemas
 
 router = APIRouter(prefix="/metrics", tags=["Metrics"])
 
@@ -33,10 +34,6 @@ def get_latest_metrics(project_id: int, db: Session = Depends(get_db)):
             recorded_at=value.recorded_at,
         ))
     return result
-
-
-from sqlalchemy import desc
-from app import models
 
 @router.get("/history/{project_id}/{metric_id}", response_model=list[schemas.MetricValueResponse])
 def get_metric_history(project_id: int, metric_id: int, limit: int = 30, db: Session = Depends(get_db)):

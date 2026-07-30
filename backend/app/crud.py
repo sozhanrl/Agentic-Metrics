@@ -50,15 +50,6 @@ def get_latest_metric_values(db: Session, project_id: int):
     Returns the most recent value per metric for a project, joined with
     its definition, so the dashboard can render name/category/unit directly.
     """
-    subq = (
-        db.query(
-            models.MetricValue.metric_id,
-            desc(models.MetricValue.recorded_at)
-        )
-        .filter(models.MetricValue.project_id == project_id)
-        .subquery()
-    )
-
     rows = (
         db.query(models.MetricValue, models.MetricDefinition)
         .join(models.MetricDefinition, models.MetricValue.metric_id == models.MetricDefinition.id)
