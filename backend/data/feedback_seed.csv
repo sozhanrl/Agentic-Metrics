@@ -1,0 +1,501 @@
+feedback_id,project_id,recommendation_id,metric_id,metric,category,actual,target,deviation,severity,priority_score,was_helpful,user_role,timestamp
+1,5,100,1,Code Coverage,code_quality,41.4,80,38.6,0.86,70.3,True,QA Engineer,2026-05-01 09:10
+2,5,101,10,Build Success Rate,devops,76.5,95,18.5,0.45,36.7,False,DevOps,2026-05-01 09:27
+3,4,102,15,Story Cycle Time,process,5.6,3,2.6,0.27,30.0,False,Scrum Master,2026-05-01 09:53
+4,3,103,3,Code Duplication,code_quality,5.6,5,0.6,0.03,30.0,True,Developer,2026-05-01 10:20
+5,1,104,10,Build Success Rate,devops,70.3,95,24.7,0.6,53.3,True,SRE,2026-05-01 11:00
+6,1,105,13,Defect Density,process,8.4,2,6.4,0.75,75.6,True,Team Lead,2026-05-01 11:07
+7,3,106,2,Cyclomatic Complexity,code_quality,24.3,10,14.3,0.71,71.5,False,Team Lead,2026-05-01 11:41
+8,1,107,8,Change Failure Rate,devops,8.2,10,1.8,0.05,30.0,False,Team Lead,2026-05-01 11:56
+9,5,108,15,Story Cycle Time,process,9.0,3,6.0,0.58,50.1,False,Team Lead,2026-05-01 12:15
+10,4,109,3,Code Duplication,code_quality,21.4,5,16.4,0.79,64.7,True,Team Lead,2026-05-01 12:37
+11,4,110,6,Deployment Frequency,devops,4.0,10,6.0,0.66,66.9,True,Team Lead,2026-05-01 13:07
+12,5,111,14,Backlog Growth Rate,process,-4.3,5,9.3,0.32,31.2,True,Team Lead,2026-05-01 13:39
+13,1,112,5,Maintainability Index,code_quality,68.0,85,17.0,0.43,45.1,True,Developer,2026-05-01 13:51
+14,5,113,7,MTTR,devops,15.4,4,11.4,0.55,48.2,True,SRE,2026-05-01 14:25
+15,5,114,15,Story Cycle Time,process,3.8,3,0.8,0.08,30.0,True,Scrum Master,2026-05-01 14:47
+16,3,115,3,Code Duplication,code_quality,4.6,5,0.4,0.02,30.0,False,QA Engineer,2026-05-01 15:24
+17,5,116,7,MTTR,devops,12.7,4,8.7,0.38,35.6,False,Team Lead,2026-05-01 15:41
+18,5,117,12,Sprint Burndown Rate,process,62.4,90,27.6,0.48,49.7,False,Scrum Master,2026-05-01 16:06
+19,2,118,4,Technical Debt Ratio,code_quality,2.4,5,2.6,0.17,30.0,False,Team Lead,2026-05-01 16:14
+20,5,119,7,MTTR,devops,21.2,4,17.2,0.85,65.9,False,DevOps,2026-05-01 16:27
+21,4,120,12,Sprint Burndown Rate,process,79.6,90,10.4,0.21,30.0,True,Team Lead,2026-05-01 16:45
+22,3,121,5,Maintainability Index,code_quality,84.0,85,1.0,0.03,30.0,True,QA Engineer,2026-05-01 17:18
+23,2,122,10,Build Success Rate,devops,77.6,95,17.4,0.44,33.8,True,Team Lead,2026-05-01 17:37
+24,1,123,11,Sprint Velocity,process,17.8,40,22.2,0.84,68.8,False,Product Owner,2026-05-01 18:14
+25,5,124,2,Cyclomatic Complexity,code_quality,12.0,10,2.0,0.09,30.0,True,QA Engineer,2026-05-01 18:49
+26,3,125,7,MTTR,devops,19.0,4,15.0,0.73,58.9,True,SRE,2026-05-01 19:21
+27,1,126,14,Backlog Growth Rate,process,8.7,5,3.7,0.14,30.0,False,Scrum Master,2026-05-01 19:51
+28,4,127,3,Code Duplication,code_quality,20.4,5,15.4,0.67,54.1,True,Developer,2026-05-01 20:07
+29,1,128,8,Change Failure Rate,devops,19.6,10,9.6,0.31,30.0,False,Team Lead,2026-05-01 20:15
+30,4,129,15,Story Cycle Time,process,10.2,3,7.2,0.8,82.2,False,Scrum Master,2026-05-01 20:51
+31,3,130,4,Technical Debt Ratio,code_quality,5.8,5,0.8,0.05,30.0,True,Team Lead,2026-05-01 21:25
+32,4,131,8,Change Failure Rate,devops,18.1,10,8.1,0.27,30.0,False,Team Lead,2026-05-01 21:39
+33,3,132,12,Sprint Burndown Rate,process,57.8,90,32.2,0.64,59.1,True,Team Lead,2026-05-01 21:47
+34,1,133,1,Code Coverage,code_quality,72.1,80,7.9,0.18,30.0,True,QA Engineer,2026-05-01 22:03
+35,2,134,6,Deployment Frequency,devops,9.3,10,0.7,0.07,30.0,True,Team Lead,2026-05-01 22:10
+36,2,135,15,Story Cycle Time,process,1.9,3,1.1,0.12,30.0,True,Product Owner,2026-05-01 22:35
+37,1,136,2,Cyclomatic Complexity,code_quality,11.6,10,1.6,0.07,30.0,True,Developer,2026-05-01 23:09
+38,2,137,10,Build Success Rate,devops,98.9,95,3.9,0.11,30.0,True,SRE,2026-05-01 23:36
+39,3,138,11,Sprint Velocity,process,50.2,40,10.2,0.37,30.0,False,Team Lead,2026-05-02 00:14
+40,3,139,1,Code Coverage,code_quality,76.7,80,3.3,0.08,30.0,True,Developer,2026-05-02 00:26
+41,2,140,6,Deployment Frequency,devops,11.4,10,1.4,0.14,30.0,True,SRE,2026-05-02 00:47
+42,3,141,15,Story Cycle Time,process,6.4,3,3.4,0.37,37.1,True,Product Owner,2026-05-02 00:54
+43,5,142,1,Code Coverage,code_quality,58.3,80,21.7,0.47,49.1,True,Team Lead,2026-05-02 01:26
+44,1,143,10,Build Success Rate,devops,60.4,95,34.6,0.85,86.3,False,Team Lead,2026-05-02 01:54
+45,3,144,15,Story Cycle Time,process,7.1,3,4.1,0.42,32.0,True,Scrum Master,2026-05-02 02:12
+46,2,145,2,Cyclomatic Complexity,code_quality,21.7,10,11.7,0.53,48.7,False,QA Engineer,2026-05-02 02:32
+47,3,146,7,MTTR,devops,23.5,4,19.5,0.95,96.4,True,Team Lead,2026-05-02 03:03
+48,2,147,12,Sprint Burndown Rate,process,56.0,90,34.0,0.66,51.6,False,Product Owner,2026-05-02 03:20
+49,2,148,4,Technical Debt Ratio,code_quality,8.3,5,3.3,0.21,30.0,True,QA Engineer,2026-05-02 03:50
+50,4,149,8,Change Failure Rate,devops,12.6,10,2.6,0.07,30.0,True,Team Lead,2026-05-02 04:29
+51,1,150,13,Defect Density,process,9.4,2,7.4,0.8,83.3,True,Product Owner,2026-05-02 04:40
+52,1,151,5,Maintainability Index,code_quality,69.6,85,15.4,0.42,35.5,True,QA Engineer,2026-05-02 05:09
+53,2,152,10,Build Success Rate,devops,67.4,95,27.6,0.68,59.9,False,Team Lead,2026-05-02 05:37
+54,3,153,14,Backlog Growth Rate,process,-7.2,5,12.2,0.46,39.1,True,Scrum Master,2026-05-02 06:14
+55,4,154,3,Code Duplication,code_quality,17.3,5,12.3,0.55,52.8,True,Developer,2026-05-02 06:43
+56,2,155,7,MTTR,devops,15.2,4,11.2,0.5,45.7,True,SRE,2026-05-02 07:15
+57,4,156,15,Story Cycle Time,process,7.7,3,4.7,0.47,41.5,True,Team Lead,2026-05-02 07:30
+58,3,157,1,Code Coverage,code_quality,55.6,80,24.4,0.58,54.3,True,Developer,2026-05-02 07:49
+59,4,158,7,MTTR,devops,4.4,4,0.4,0.02,30.0,False,DevOps,2026-05-02 08:20
+60,1,159,15,Story Cycle Time,process,3.1,3,0.1,0.01,30.0,True,Team Lead,2026-05-02 08:31
+61,2,160,4,Technical Debt Ratio,code_quality,5.9,5,0.9,0.06,30.0,True,QA Engineer,2026-05-02 08:43
+62,4,161,9,Lead Time for Changes,devops,14.5,24,9.5,0.12,30.0,False,SRE,2026-05-02 09:20
+63,4,162,14,Backlog Growth Rate,process,23.2,5,18.2,0.68,69.3,False,Product Owner,2026-05-02 09:41
+64,3,163,2,Cyclomatic Complexity,code_quality,26.0,10,16.0,0.71,69.8,True,Developer,2026-05-02 10:14
+65,2,164,6,Deployment Frequency,devops,11.0,10,1.0,0.1,30.0,False,DevOps,2026-05-02 10:28
+66,5,165,12,Sprint Burndown Rate,process,63.0,90,27.0,0.47,38.3,True,Product Owner,2026-05-02 11:02
+67,1,166,4,Technical Debt Ratio,code_quality,3.1,5,1.9,0.12,30.0,True,QA Engineer,2026-05-02 11:31
+68,5,167,9,Lead Time for Changes,devops,2.6,24,21.4,0.27,30.0,False,SRE,2026-05-02 12:10
+69,3,168,15,Story Cycle Time,process,10.9,3,7.9,0.81,67.4,True,Product Owner,2026-05-02 12:40
+70,5,169,2,Cyclomatic Complexity,code_quality,26.0,10,16.0,0.79,82.5,True,Team Lead,2026-05-02 12:46
+71,3,170,6,Deployment Frequency,devops,10.0,10,0.0,0.0,30.0,True,SRE,2026-05-02 13:04
+72,3,171,14,Backlog Growth Rate,process,3.1,5,1.9,0.07,30.0,False,Product Owner,2026-05-02 13:14
+73,1,172,4,Technical Debt Ratio,code_quality,2.3,5,2.7,0.17,30.0,True,QA Engineer,2026-05-02 13:21
+74,4,173,6,Deployment Frequency,devops,14.3,10,4.3,0.42,31.8,True,DevOps,2026-05-02 13:33
+75,5,174,15,Story Cycle Time,process,11.4,3,8.4,0.86,71.1,True,Team Lead,2026-05-02 13:45
+76,4,175,2,Cyclomatic Complexity,code_quality,29.1,10,19.1,0.83,62.9,True,QA Engineer,2026-05-02 14:15
+77,5,176,7,MTTR,devops,2.7,4,1.3,0.06,30.0,True,SRE,2026-05-02 14:27
+78,3,177,15,Story Cycle Time,process,9.6,3,6.6,0.66,58.0,True,Team Lead,2026-05-02 14:32
+79,2,178,4,Technical Debt Ratio,code_quality,16.8,5,11.8,0.68,70.6,True,Team Lead,2026-05-02 15:04
+80,4,179,7,MTTR,devops,17.9,4,13.9,0.69,57.3,False,Team Lead,2026-05-02 15:38
+81,3,180,14,Backlog Growth Rate,process,23.0,5,18.0,0.68,57.6,True,Scrum Master,2026-05-02 16:11
+82,3,181,2,Cyclomatic Complexity,code_quality,23.8,10,13.8,0.65,61.8,True,Team Lead,2026-05-02 16:27
+83,3,182,9,Lead Time for Changes,devops,21.9,24,2.1,0.03,30.0,False,Team Lead,2026-05-02 17:07
+84,2,183,11,Sprint Velocity,process,35.7,40,4.3,0.15,30.0,True,Team Lead,2026-05-02 17:42
+85,3,184,4,Technical Debt Ratio,code_quality,10.1,5,5.1,0.29,30.0,True,Developer,2026-05-02 18:10
+86,4,185,9,Lead Time for Changes,devops,54.0,24,30.0,0.38,39.9,False,SRE,2026-05-02 18:32
+87,2,186,13,Defect Density,process,2.9,2,0.9,0.1,30.0,True,Team Lead,2026-05-02 18:49
+88,3,187,2,Cyclomatic Complexity,code_quality,23.5,10,13.5,0.6,55.6,True,QA Engineer,2026-05-02 19:00
+89,3,188,7,MTTR,devops,7.8,4,3.8,0.17,30.0,False,DevOps,2026-05-02 19:07
+90,1,189,11,Sprint Velocity,process,37.1,40,2.9,0.11,30.0,False,Product Owner,2026-05-02 19:12
+91,4,190,5,Maintainability Index,code_quality,62.8,85,22.2,0.58,49.4,False,Team Lead,2026-05-02 19:24
+92,5,191,6,Deployment Frequency,devops,6.6,10,3.4,0.33,31.0,True,DevOps,2026-05-02 19:48
+93,2,192,11,Sprint Velocity,process,54.8,40,14.8,0.51,49.9,True,Team Lead,2026-05-02 20:26
+94,5,193,4,Technical Debt Ratio,code_quality,10.1,5,5.1,0.31,31.2,False,Team Lead,2026-05-02 20:34
+95,1,194,10,Build Success Rate,devops,97.4,95,2.4,0.06,30.0,False,SRE,2026-05-02 20:49
+96,4,195,12,Sprint Burndown Rate,process,50.4,90,39.6,0.68,51.1,True,Team Lead,2026-05-02 21:12
+97,2,196,1,Code Coverage,code_quality,52.7,80,27.3,0.65,62.5,True,QA Engineer,2026-05-02 21:33
+98,2,197,10,Build Success Rate,devops,85.8,95,9.2,0.26,30.0,False,Team Lead,2026-05-02 21:55
+99,3,198,12,Sprint Burndown Rate,process,44.3,90,45.7,0.8,67.4,False,Team Lead,2026-05-02 22:28
+100,4,199,1,Code Coverage,code_quality,65.8,80,14.2,0.32,30.0,True,QA Engineer,2026-05-02 23:01
+101,1,200,6,Deployment Frequency,devops,9.4,10,0.6,0.07,30.0,False,DevOps,2026-05-02 23:20
+102,1,201,15,Story Cycle Time,process,7.5,3,4.5,0.43,42.1,False,Team Lead,2026-05-02 23:36
+103,4,202,4,Technical Debt Ratio,code_quality,11.3,5,6.3,0.38,31.7,False,Team Lead,2026-05-02 23:46
+104,4,203,9,Lead Time for Changes,devops,34.7,24,10.7,0.13,30.0,False,SRE,2026-05-03 00:22
+105,3,204,13,Defect Density,process,6.8,2,4.8,0.55,53.8,True,Scrum Master,2026-05-03 00:43
+106,5,205,3,Code Duplication,code_quality,4.7,5,0.3,0.01,30.0,False,Developer,2026-05-03 01:17
+107,1,206,9,Lead Time for Changes,devops,7.1,24,16.9,0.22,30.0,False,SRE,2026-05-03 01:35
+108,1,207,13,Defect Density,process,5.7,2,3.7,0.46,40.5,True,Scrum Master,2026-05-03 01:55
+109,4,208,2,Cyclomatic Complexity,code_quality,12.8,10,2.8,0.12,30.0,True,Developer,2026-05-03 02:07
+110,4,209,7,MTTR,devops,12.5,4,8.5,0.41,37.0,True,SRE,2026-05-03 02:27
+111,1,210,14,Backlog Growth Rate,process,12.1,5,7.1,0.26,30.0,True,Scrum Master,2026-05-03 02:49
+112,3,211,4,Technical Debt Ratio,code_quality,8.1,5,3.1,0.2,30.0,True,QA Engineer,2026-05-03 03:25
+113,4,212,7,MTTR,devops,11.3,4,7.3,0.34,30.0,False,SRE,2026-05-03 03:50
+114,1,213,12,Sprint Burndown Rate,process,98.8,90,8.8,0.16,30.0,False,Product Owner,2026-05-03 04:15
+115,2,214,4,Technical Debt Ratio,code_quality,14.7,5,9.7,0.63,54.5,True,QA Engineer,2026-05-03 04:51
+116,1,215,6,Deployment Frequency,devops,2.8,10,7.2,0.8,68.0,True,SRE,2026-05-03 05:29
+117,4,216,14,Backlog Growth Rate,process,-9.4,5,14.4,0.5,50.6,False,Scrum Master,2026-05-03 05:50
+118,5,217,3,Code Duplication,code_quality,16.3,5,11.3,0.51,39.5,True,QA Engineer,2026-05-03 06:19
+119,1,218,8,Change Failure Rate,devops,25.8,10,15.8,0.52,46.6,False,Team Lead,2026-05-03 06:39
+120,1,219,13,Defect Density,process,10.0,2,8.0,0.96,84.5,True,Team Lead,2026-05-03 07:12
+121,3,220,2,Cyclomatic Complexity,code_quality,22.4,10,12.4,0.61,46.6,True,Team Lead,2026-05-03 07:40
+122,2,221,9,Lead Time for Changes,devops,15.7,24,8.3,0.11,30.0,False,DevOps,2026-05-03 07:50
+123,2,222,15,Story Cycle Time,process,10.6,3,7.6,0.8,65.8,False,Scrum Master,2026-05-03 08:24
+124,5,223,3,Code Duplication,code_quality,12.6,5,7.6,0.36,36.7,True,Team Lead,2026-05-03 08:39
+125,3,224,6,Deployment Frequency,devops,7.2,10,2.8,0.28,30.0,False,SRE,2026-05-03 09:13
+126,3,225,13,Defect Density,process,2.4,2,0.4,0.05,30.0,True,Team Lead,2026-05-03 09:36
+127,1,226,3,Code Duplication,code_quality,2.5,5,2.5,0.12,30.0,True,QA Engineer,2026-05-03 10:12
+128,5,227,8,Change Failure Rate,devops,31.5,10,21.5,0.63,62.4,True,DevOps,2026-05-03 10:33
+129,1,228,12,Sprint Burndown Rate,process,77.7,90,12.3,0.24,30.0,True,Product Owner,2026-05-03 11:01
+130,5,229,2,Cyclomatic Complexity,code_quality,7.3,10,2.7,0.12,30.0,True,Developer,2026-05-03 11:29
+131,3,230,10,Build Success Rate,devops,79.6,95,15.4,0.39,31.2,False,SRE,2026-05-03 11:55
+132,4,231,11,Sprint Velocity,process,33.7,40,6.3,0.22,30.0,True,Team Lead,2026-05-03 12:35
+133,3,232,3,Code Duplication,code_quality,4.1,5,0.9,0.04,30.0,True,Team Lead,2026-05-03 13:04
+134,3,233,8,Change Failure Rate,devops,6.1,10,3.9,0.12,30.0,False,Team Lead,2026-05-03 13:23
+135,2,234,11,Sprint Velocity,process,40.4,40,0.4,0.01,30.0,True,Scrum Master,2026-05-03 13:30
+136,4,235,1,Code Coverage,code_quality,56.7,80,23.3,0.54,42.1,False,Developer,2026-05-03 14:04
+137,2,236,8,Change Failure Rate,devops,27.5,10,17.5,0.56,57.9,False,Team Lead,2026-05-03 14:35
+138,3,237,11,Sprint Velocity,process,48.3,40,8.3,0.31,32.0,True,Team Lead,2026-05-03 14:53
+139,5,238,4,Technical Debt Ratio,code_quality,10.0,5,5.0,0.3,30.0,False,Team Lead,2026-05-03 15:20
+140,1,239,6,Deployment Frequency,devops,6.6,10,3.4,0.33,30.0,False,SRE,2026-05-03 15:38
+141,2,240,15,Story Cycle Time,process,11.7,3,8.7,0.83,70.6,False,Team Lead,2026-05-03 15:47
+142,5,241,5,Maintainability Index,code_quality,59.3,85,25.7,0.65,65.7,True,Developer,2026-05-03 15:52
+143,1,242,8,Change Failure Rate,devops,34.6,10,24.6,0.71,56.0,True,DevOps,2026-05-03 15:58
+144,3,243,12,Sprint Burndown Rate,process,40.9,90,49.1,0.95,78.0,True,Scrum Master,2026-05-03 16:06
+145,5,244,2,Cyclomatic Complexity,code_quality,23.5,10,13.5,0.63,61.3,True,Team Lead,2026-05-03 16:17
+146,5,245,9,Lead Time for Changes,devops,49.4,24,25.4,0.35,30.0,False,Team Lead,2026-05-03 16:41
+147,1,246,14,Backlog Growth Rate,process,15.7,5,10.7,0.37,38.8,False,Product Owner,2026-05-03 17:17
+148,5,247,4,Technical Debt Ratio,code_quality,3.3,5,1.7,0.1,30.0,True,Team Lead,2026-05-03 17:57
+149,1,248,8,Change Failure Rate,devops,16.5,10,6.5,0.2,30.0,False,SRE,2026-05-03 18:09
+150,4,249,15,Story Cycle Time,process,8.9,3,5.9,0.58,51.4,True,Product Owner,2026-05-03 18:39
+151,4,250,4,Technical Debt Ratio,code_quality,15.1,5,10.1,0.6,50.6,True,Developer,2026-05-03 18:48
+152,5,251,6,Deployment Frequency,devops,12.6,10,2.6,0.25,30.0,False,DevOps,2026-05-03 18:56
+153,4,252,15,Story Cycle Time,process,11.5,3,8.5,0.88,83.7,True,Team Lead,2026-05-03 19:04
+154,4,253,3,Code Duplication,code_quality,15.8,5,10.8,0.49,45.2,True,QA Engineer,2026-05-03 19:23
+155,4,254,6,Deployment Frequency,devops,5.9,10,4.1,0.43,33.7,True,DevOps,2026-05-03 20:03
+156,3,255,15,Story Cycle Time,process,7.7,3,4.7,0.49,37.1,False,Team Lead,2026-05-03 20:09
+157,2,256,2,Cyclomatic Complexity,code_quality,11.8,10,1.8,0.09,30.0,True,Developer,2026-05-03 20:39
+158,4,257,6,Deployment Frequency,devops,3.0,10,7.0,0.73,55.4,False,DevOps,2026-05-03 21:10
+159,5,258,14,Backlog Growth Rate,process,3.6,5,1.4,0.05,30.0,False,Team Lead,2026-05-03 21:20
+160,4,259,1,Code Coverage,code_quality,48.6,80,31.4,0.76,58.1,True,Team Lead,2026-05-03 21:56
+161,1,260,10,Build Success Rate,devops,77.2,95,17.8,0.45,43.9,True,SRE,2026-05-03 22:19
+162,1,261,15,Story Cycle Time,process,6.4,3,3.4,0.36,30.0,True,Team Lead,2026-05-03 22:24
+163,1,262,2,Cyclomatic Complexity,code_quality,12.5,10,2.5,0.11,30.0,True,Team Lead,2026-05-03 22:29
+164,5,263,9,Lead Time for Changes,devops,72.2,24,48.2,0.59,51.0,False,Team Lead,2026-05-03 22:56
+165,3,264,11,Sprint Velocity,process,30.9,40,9.1,0.35,30.8,True,Scrum Master,2026-05-03 23:28
+166,2,265,5,Maintainability Index,code_quality,68.2,85,16.8,0.45,37.7,True,Team Lead,2026-05-04 00:02
+167,1,266,8,Change Failure Rate,devops,5.3,10,4.7,0.15,30.0,False,Team Lead,2026-05-04 00:32
+168,1,267,13,Defect Density,process,7.6,2,5.6,0.62,61.0,True,Team Lead,2026-05-04 01:10
+169,2,268,5,Maintainability Index,code_quality,58.7,85,26.3,0.73,62.4,False,QA Engineer,2026-05-04 01:30
+170,1,269,6,Deployment Frequency,devops,3.1,10,6.9,0.67,62.4,False,Team Lead,2026-05-04 01:46
+171,5,270,14,Backlog Growth Rate,process,8.6,5,3.6,0.13,30.0,True,Team Lead,2026-05-04 02:11
+172,5,271,3,Code Duplication,code_quality,5.5,5,0.5,0.02,30.0,True,Team Lead,2026-05-04 02:19
+173,1,272,8,Change Failure Rate,devops,21.3,10,11.3,0.34,30.1,True,SRE,2026-05-04 02:29
+174,1,273,15,Story Cycle Time,process,7.5,3,4.5,0.45,41.6,False,Team Lead,2026-05-04 03:02
+175,4,274,5,Maintainability Index,code_quality,79.3,85,5.7,0.15,30.0,True,Developer,2026-05-04 03:13
+176,4,275,8,Change Failure Rate,devops,39.3,10,29.3,0.84,79.3,True,Team Lead,2026-05-04 03:46
+177,3,276,15,Story Cycle Time,process,6.8,3,3.8,0.37,31.9,True,Product Owner,2026-05-04 03:54
+178,5,277,3,Code Duplication,code_quality,3.5,5,1.5,0.06,30.0,True,QA Engineer,2026-05-04 04:08
+179,4,278,8,Change Failure Rate,devops,5.1,10,4.9,0.16,30.0,True,Team Lead,2026-05-04 04:21
+180,2,279,15,Story Cycle Time,process,8.8,3,5.8,0.56,51.4,True,Product Owner,2026-05-04 04:59
+181,2,280,1,Code Coverage,code_quality,75.5,80,4.5,0.1,30.0,True,Developer,2026-05-04 05:25
+182,5,281,9,Lead Time for Changes,devops,20.0,24,4.0,0.06,30.0,True,DevOps,2026-05-04 06:04
+183,2,282,15,Story Cycle Time,process,1.4,3,1.6,0.16,30.0,True,Product Owner,2026-05-04 06:19
+184,1,283,2,Cyclomatic Complexity,code_quality,25.8,10,15.8,0.76,75.4,True,Team Lead,2026-05-04 06:50
+185,4,284,8,Change Failure Rate,devops,27.7,10,17.7,0.52,45.9,True,Team Lead,2026-05-04 07:09
+186,3,285,15,Story Cycle Time,process,3.6,3,0.6,0.07,30.0,False,Scrum Master,2026-05-04 07:42
+187,2,286,4,Technical Debt Ratio,code_quality,15.8,5,10.8,0.7,63.1,True,Developer,2026-05-04 07:55
+188,5,287,8,Change Failure Rate,devops,4.0,10,6.0,0.18,30.0,False,Team Lead,2026-05-04 08:07
+189,1,288,13,Defect Density,process,1.3,2,0.7,0.08,30.0,True,Product Owner,2026-05-04 08:26
+190,2,289,4,Technical Debt Ratio,code_quality,17.9,5,12.9,0.85,74.3,True,Team Lead,2026-05-04 08:55
+191,3,290,6,Deployment Frequency,devops,6.2,10,3.8,0.36,37.1,False,Team Lead,2026-05-04 09:09
+192,4,291,12,Sprint Burndown Rate,process,42.3,90,47.7,0.94,83.8,False,Team Lead,2026-05-04 09:42
+193,5,292,5,Maintainability Index,code_quality,50.2,85,34.8,0.86,71.1,False,QA Engineer,2026-05-04 10:20
+194,5,293,9,Lead Time for Changes,devops,12.5,24,11.5,0.14,30.0,True,SRE,2026-05-04 10:54
+195,5,294,11,Sprint Velocity,process,19.4,40,20.6,0.81,75.3,True,Team Lead,2026-05-04 11:14
+196,1,295,2,Cyclomatic Complexity,code_quality,12.3,10,2.3,0.1,30.0,True,Developer,2026-05-04 11:52
+197,1,296,8,Change Failure Rate,devops,4.6,10,5.4,0.17,30.0,False,Team Lead,2026-05-04 12:21
+198,1,297,14,Backlog Growth Rate,process,-8.3,5,13.3,0.48,41.4,False,Product Owner,2026-05-04 12:48
+199,2,298,2,Cyclomatic Complexity,code_quality,23.3,10,13.3,0.63,61.8,True,Team Lead,2026-05-04 12:55
+200,4,299,8,Change Failure Rate,devops,22.7,10,12.7,0.41,32.9,False,SRE,2026-05-04 13:11
+201,2,300,12,Sprint Burndown Rate,process,43.8,90,46.2,0.89,79.0,True,Scrum Master,2026-05-04 13:18
+202,1,301,3,Code Duplication,code_quality,23.5,5,18.5,0.86,90.0,True,Team Lead,2026-05-04 13:35
+203,3,302,8,Change Failure Rate,devops,15.6,10,5.6,0.18,30.0,True,DevOps,2026-05-04 14:07
+204,4,303,14,Backlog Growth Rate,process,19.7,5,14.7,0.58,50.2,False,Product Owner,2026-05-04 14:35
+205,5,304,5,Maintainability Index,code_quality,62.0,85,23.0,0.57,50.0,True,Developer,2026-05-04 14:58
+206,4,305,8,Change Failure Rate,devops,5.9,10,4.1,0.12,30.0,False,Team Lead,2026-05-04 15:13
+207,3,306,14,Backlog Growth Rate,process,4.1,5,0.9,0.03,30.0,True,Product Owner,2026-05-04 15:21
+208,1,307,1,Code Coverage,code_quality,76.9,80,3.1,0.07,30.0,True,Developer,2026-05-04 15:35
+209,3,308,10,Build Success Rate,devops,86.4,95,8.6,0.23,30.0,True,Team Lead,2026-05-04 16:03
+210,3,309,14,Backlog Growth Rate,process,28.0,5,23.0,0.79,62.9,True,Product Owner,2026-05-04 16:36
+211,1,310,1,Code Coverage,code_quality,71.6,80,8.4,0.2,30.0,True,Developer,2026-05-04 16:42
+212,4,311,7,MTTR,devops,12.5,4,8.5,0.39,35.8,True,SRE,2026-05-04 17:00
+213,4,312,15,Story Cycle Time,process,4.1,3,1.1,0.12,30.0,True,Scrum Master,2026-05-04 17:16
+214,3,313,4,Technical Debt Ratio,code_quality,20.0,5,15.0,0.97,99.0,False,QA Engineer,2026-05-04 17:25
+215,2,314,10,Build Success Rate,devops,81.1,95,13.9,0.39,39.2,False,Team Lead,2026-05-04 17:53
+216,1,315,15,Story Cycle Time,process,3.5,3,0.5,0.06,30.0,True,Product Owner,2026-05-04 18:21
+217,1,316,5,Maintainability Index,code_quality,75.8,85,9.2,0.24,30.0,True,Developer,2026-05-04 18:45
+218,1,317,9,Lead Time for Changes,devops,96.0,24,72.0,0.96,87.1,False,Team Lead,2026-05-04 18:58
+219,5,318,13,Defect Density,process,6.6,2,4.6,0.53,50.6,True,Team Lead,2026-05-04 19:14
+220,3,319,2,Cyclomatic Complexity,code_quality,15.8,10,5.8,0.29,30.0,True,Developer,2026-05-04 19:29
+221,1,320,7,MTTR,devops,8.4,4,4.4,0.21,30.0,False,SRE,2026-05-04 19:50
+222,1,321,12,Sprint Burndown Rate,process,78.1,90,11.9,0.22,30.0,True,Team Lead,2026-05-04 20:27
+223,3,322,2,Cyclomatic Complexity,code_quality,19.8,10,9.8,0.46,36.9,True,QA Engineer,2026-05-04 20:34
+224,5,323,6,Deployment Frequency,devops,2.1,10,7.9,0.87,85.4,True,DevOps,2026-05-04 21:05
+225,4,324,15,Story Cycle Time,process,8.0,3,5.0,0.51,47.8,True,Product Owner,2026-05-04 21:25
+226,4,325,4,Technical Debt Ratio,code_quality,7.4,5,2.4,0.14,30.0,True,Team Lead,2026-05-04 21:43
+227,4,326,8,Change Failure Rate,devops,25.1,10,15.1,0.45,43.4,False,SRE,2026-05-04 21:56
+228,2,327,13,Defect Density,process,5.4,2,3.4,0.37,30.4,True,Product Owner,2026-05-04 22:10
+229,3,328,1,Code Coverage,code_quality,42.8,80,37.2,0.92,92.9,True,Developer,2026-05-04 22:35
+230,4,329,7,MTTR,devops,18.6,4,14.6,0.68,61.5,False,SRE,2026-05-04 22:41
+231,1,330,11,Sprint Velocity,process,52.8,40,12.8,0.47,48.9,True,Product Owner,2026-05-04 22:49
+232,1,331,3,Code Duplication,code_quality,13.4,5,8.4,0.41,38.8,True,QA Engineer,2026-05-04 23:00
+233,4,332,9,Lead Time for Changes,devops,14.6,24,9.4,0.12,30.0,False,DevOps,2026-05-04 23:08
+234,5,333,15,Story Cycle Time,process,7.2,3,4.2,0.42,35.1,True,Product Owner,2026-05-04 23:30
+235,5,334,5,Maintainability Index,code_quality,80.6,85,4.4,0.11,30.0,True,Team Lead,2026-05-04 23:58
+236,3,335,7,MTTR,devops,5.6,4,1.6,0.07,30.0,True,DevOps,2026-05-05 00:33
+237,3,336,15,Story Cycle Time,process,6.0,3,3.0,0.31,30.0,True,Team Lead,2026-05-05 00:48
+238,5,337,4,Technical Debt Ratio,code_quality,19.8,5,14.8,0.95,79.8,True,QA Engineer,2026-05-05 01:24
+239,5,338,10,Build Success Rate,devops,71.7,95,23.3,0.65,55.9,False,SRE,2026-05-05 01:48
+240,5,339,11,Sprint Velocity,process,38.9,40,1.1,0.04,30.0,False,Team Lead,2026-05-05 02:07
+241,2,340,1,Code Coverage,code_quality,72.1,80,7.9,0.17,30.0,True,Team Lead,2026-05-05 02:27
+242,2,341,6,Deployment Frequency,devops,9.0,10,1.0,0.11,30.0,False,SRE,2026-05-05 02:58
+243,1,342,12,Sprint Burndown Rate,process,64.6,90,25.4,0.49,50.3,False,Team Lead,2026-05-05 03:11
+244,2,343,5,Maintainability Index,code_quality,59.3,85,25.7,0.66,62.6,True,Team Lead,2026-05-05 03:45
+245,3,344,10,Build Success Rate,devops,73.4,95,21.6,0.56,55.0,False,Team Lead,2026-05-05 04:20
+246,3,345,12,Sprint Burndown Rate,process,97.4,90,7.4,0.13,30.0,False,Product Owner,2026-05-05 04:38
+247,3,346,4,Technical Debt Ratio,code_quality,7.7,5,2.7,0.16,30.0,True,Team Lead,2026-05-05 04:50
+248,3,347,10,Build Success Rate,devops,86.4,95,8.6,0.22,30.0,False,DevOps,2026-05-05 04:57
+249,4,348,13,Defect Density,process,9.6,2,7.6,0.82,84.2,True,Team Lead,2026-05-05 05:15
+250,5,349,2,Cyclomatic Complexity,code_quality,25.7,10,15.7,0.7,64.3,True,Developer,2026-05-05 05:35
+251,4,350,7,MTTR,devops,2.2,4,1.8,0.09,30.0,True,DevOps,2026-05-05 06:01
+252,4,351,14,Backlog Growth Rate,process,-6.0,5,11.0,0.42,31.6,True,Scrum Master,2026-05-05 06:36
+253,1,352,4,Technical Debt Ratio,code_quality,13.7,5,8.7,0.56,46.8,True,Developer,2026-05-05 06:55
+254,2,353,10,Build Success Rate,devops,88.8,95,6.2,0.17,30.0,False,SRE,2026-05-05 07:02
+255,1,354,14,Backlog Growth Rate,process,21.5,5,16.5,0.58,56.5,False,Product Owner,2026-05-05 07:07
+256,5,355,3,Code Duplication,code_quality,15.1,5,10.1,0.44,46.0,True,QA Engineer,2026-05-05 07:45
+257,3,356,9,Lead Time for Changes,devops,85.6,24,61.6,0.74,66.7,True,DevOps,2026-05-05 08:00
+258,5,357,14,Backlog Growth Rate,process,15.9,5,10.9,0.42,31.7,True,Product Owner,2026-05-05 08:17
+259,1,358,2,Cyclomatic Complexity,code_quality,20.3,10,10.3,0.49,42.7,True,Team Lead,2026-05-05 08:47
+260,4,359,6,Deployment Frequency,devops,3.6,10,6.4,0.62,52.5,True,SRE,2026-05-05 09:07
+261,3,360,14,Backlog Growth Rate,process,20.2,5,15.2,0.6,50.4,False,Scrum Master,2026-05-05 09:35
+262,3,361,2,Cyclomatic Complexity,code_quality,6.6,10,3.4,0.15,30.0,True,QA Engineer,2026-05-05 09:47
+263,5,362,8,Change Failure Rate,devops,16.0,10,6.0,0.18,30.0,False,SRE,2026-05-05 10:15
+264,2,363,14,Backlog Growth Rate,process,18.1,5,13.1,0.52,50.8,False,Scrum Master,2026-05-05 10:25
+265,5,364,5,Maintainability Index,code_quality,70.1,85,14.9,0.41,31.7,True,Developer,2026-05-05 11:02
+266,2,365,7,MTTR,devops,14.2,4,10.2,0.44,37.3,False,DevOps,2026-05-05 11:38
+267,4,366,11,Sprint Velocity,process,51.0,40,11.0,0.4,30.7,True,Product Owner,2026-05-05 11:46
+268,2,367,5,Maintainability Index,code_quality,70.8,85,14.2,0.39,37.7,True,Developer,2026-05-05 11:55
+269,4,368,6,Deployment Frequency,devops,6.9,10,3.1,0.33,30.1,True,DevOps,2026-05-05 12:02
+270,4,369,13,Defect Density,process,4.4,2,2.4,0.29,30.0,False,Team Lead,2026-05-05 12:30
+271,5,370,4,Technical Debt Ratio,code_quality,10.1,5,5.1,0.34,30.0,True,QA Engineer,2026-05-05 12:43
+272,1,371,8,Change Failure Rate,devops,6.5,10,3.5,0.12,30.0,True,DevOps,2026-05-05 12:49
+273,2,372,13,Defect Density,process,4.9,2,2.9,0.35,30.7,True,Scrum Master,2026-05-05 13:23
+274,4,373,3,Code Duplication,code_quality,5.6,5,0.6,0.03,30.0,True,Developer,2026-05-05 13:29
+275,1,374,7,MTTR,devops,5.7,4,1.7,0.07,30.0,False,Team Lead,2026-05-05 13:49
+276,2,375,11,Sprint Velocity,process,31.1,40,8.9,0.32,30.0,False,Scrum Master,2026-05-05 14:26
+277,3,376,3,Code Duplication,code_quality,7.4,5,2.4,0.12,30.0,True,QA Engineer,2026-05-05 14:46
+278,1,377,8,Change Failure Rate,devops,35.3,10,25.3,0.84,76.1,False,SRE,2026-05-05 15:26
+279,1,378,15,Story Cycle Time,process,10.7,3,7.7,0.84,78.8,True,Product Owner,2026-05-05 15:53
+280,2,379,4,Technical Debt Ratio,code_quality,16.1,5,11.1,0.66,57.7,True,Team Lead,2026-05-05 16:32
+281,1,380,9,Lead Time for Changes,devops,24.7,24,0.7,0.01,30.0,True,SRE,2026-05-05 17:12
+282,3,381,14,Backlog Growth Rate,process,28.7,5,23.7,0.89,70.3,True,Scrum Master,2026-05-05 17:22
+283,4,382,4,Technical Debt Ratio,code_quality,17.2,5,12.2,0.7,67.7,True,Team Lead,2026-05-05 17:29
+284,2,383,6,Deployment Frequency,devops,3.6,10,6.4,0.69,66.7,False,SRE,2026-05-05 17:55
+285,4,384,13,Defect Density,process,9.6,2,7.6,0.81,83.5,False,Scrum Master,2026-05-05 18:15
+286,4,385,5,Maintainability Index,code_quality,81.7,85,3.3,0.09,30.0,True,Team Lead,2026-05-05 18:49
+287,1,386,10,Build Success Rate,devops,85.3,95,9.7,0.25,30.0,False,SRE,2026-05-05 19:24
+288,2,387,13,Defect Density,process,9.2,2,7.2,0.82,71.7,True,Scrum Master,2026-05-05 19:30
+289,3,388,3,Code Duplication,code_quality,14.7,5,9.7,0.45,43.5,True,Developer,2026-05-05 19:49
+290,3,389,9,Lead Time for Changes,devops,55.6,24,31.6,0.39,35.7,False,SRE,2026-05-05 20:25
+291,4,390,14,Backlog Growth Rate,process,8.4,5,3.4,0.13,30.0,True,Team Lead,2026-05-05 20:41
+292,1,391,5,Maintainability Index,code_quality,94.6,85,9.6,0.27,30.0,False,Developer,2026-05-05 20:46
+293,5,392,9,Lead Time for Changes,devops,14.9,24,9.1,0.12,30.0,True,DevOps,2026-05-05 21:20
+294,4,393,13,Defect Density,process,1.1,2,0.9,0.11,30.0,False,Team Lead,2026-05-05 21:26
+295,3,394,1,Code Coverage,code_quality,69.3,80,10.7,0.24,30.0,True,QA Engineer,2026-05-05 21:32
+296,1,395,10,Build Success Rate,devops,91.7,95,3.3,0.09,30.0,False,DevOps,2026-05-05 22:10
+297,1,396,12,Sprint Burndown Rate,process,54.5,90,35.5,0.67,55.3,True,Product Owner,2026-05-05 22:38
+298,1,397,4,Technical Debt Ratio,code_quality,10.3,5,5.3,0.31,30.0,True,Developer,2026-05-05 22:48
+299,1,398,9,Lead Time for Changes,devops,37.7,24,13.7,0.18,30.0,True,DevOps,2026-05-05 23:24
+300,1,399,14,Backlog Growth Rate,process,15.8,5,10.8,0.39,40.7,False,Team Lead,2026-05-05 23:43
+301,3,400,2,Cyclomatic Complexity,code_quality,27.5,10,17.5,0.83,76.4,True,Developer,2026-05-06 00:22
+302,5,401,10,Build Success Rate,devops,85.7,95,9.3,0.23,30.0,True,DevOps,2026-05-06 00:36
+303,5,402,14,Backlog Growth Rate,process,27.2,5,22.2,0.79,72.6,True,Product Owner,2026-05-06 01:02
+304,3,403,4,Technical Debt Ratio,code_quality,15.6,5,10.6,0.62,64.9,True,QA Engineer,2026-05-06 01:10
+305,4,404,6,Deployment Frequency,devops,7.1,10,2.9,0.31,30.0,False,Team Lead,2026-05-06 01:35
+306,4,405,11,Sprint Velocity,process,40.4,40,0.4,0.02,30.0,True,Team Lead,2026-05-06 02:07
+307,1,406,2,Cyclomatic Complexity,code_quality,22.0,10,12.0,0.57,44.2,True,Developer,2026-05-06 02:17
+308,3,407,8,Change Failure Rate,devops,7.9,10,2.1,0.07,30.0,False,SRE,2026-05-06 02:28
+309,1,408,11,Sprint Velocity,process,15.2,40,24.8,0.89,76.4,True,Scrum Master,2026-05-06 02:44
+310,5,409,4,Technical Debt Ratio,code_quality,10.1,5,5.1,0.32,30.0,True,Team Lead,2026-05-06 02:54
+311,1,410,10,Build Success Rate,devops,83.3,95,11.7,0.3,30.0,True,SRE,2026-05-06 03:34
+312,3,411,12,Sprint Burndown Rate,process,74.3,90,15.7,0.27,30.0,True,Product Owner,2026-05-06 04:10
+313,3,412,2,Cyclomatic Complexity,code_quality,6.6,10,3.4,0.16,30.0,True,Developer,2026-05-06 04:31
+314,3,413,7,MTTR,devops,17.6,4,13.6,0.63,58.9,False,DevOps,2026-05-06 04:36
+315,4,414,14,Backlog Growth Rate,process,3.3,5,1.7,0.06,30.0,True,Product Owner,2026-05-06 04:49
+316,3,415,3,Code Duplication,code_quality,9.4,5,4.4,0.22,30.0,True,Team Lead,2026-05-06 05:12
+317,3,416,9,Lead Time for Changes,devops,93.0,24,69.0,0.93,78.8,True,SRE,2026-05-06 05:24
+318,4,417,15,Story Cycle Time,process,3.2,3,0.2,0.02,30.0,False,Scrum Master,2026-05-06 05:42
+319,4,418,4,Technical Debt Ratio,code_quality,16.4,5,11.4,0.74,57.0,False,Team Lead,2026-05-06 05:55
+320,4,419,8,Change Failure Rate,devops,11.2,10,1.2,0.04,30.0,False,DevOps,2026-05-06 06:30
+321,1,420,15,Story Cycle Time,process,5.4,3,2.4,0.25,30.0,True,Team Lead,2026-05-06 06:58
+322,3,421,5,Maintainability Index,code_quality,76.7,85,8.3,0.23,30.0,True,QA Engineer,2026-05-06 07:13
+323,4,422,10,Build Success Rate,devops,61.7,95,33.3,0.95,90.6,False,SRE,2026-05-06 07:24
+324,5,423,11,Sprint Velocity,process,18.9,40,21.1,0.75,73.1,True,Team Lead,2026-05-06 07:43
+325,3,424,4,Technical Debt Ratio,code_quality,8.7,5,3.7,0.23,30.0,True,Developer,2026-05-06 07:49
+326,2,425,9,Lead Time for Changes,devops,11.8,24,12.2,0.15,30.0,True,Team Lead,2026-05-06 08:16
+327,4,426,13,Defect Density,process,3.8,2,1.8,0.22,30.0,True,Scrum Master,2026-05-06 08:49
+328,1,427,3,Code Duplication,code_quality,3.5,5,1.5,0.06,30.0,True,Team Lead,2026-05-06 09:04
+329,2,428,7,MTTR,devops,12.9,4,8.9,0.42,35.7,False,SRE,2026-05-06 09:34
+330,4,429,12,Sprint Burndown Rate,process,51.2,90,38.8,0.74,64.3,False,Scrum Master,2026-05-06 10:06
+331,5,430,4,Technical Debt Ratio,code_quality,2.1,5,2.9,0.17,30.0,True,Developer,2026-05-06 10:17
+332,5,431,10,Build Success Rate,devops,67.3,95,27.7,0.71,63.0,True,SRE,2026-05-06 10:42
+333,5,432,15,Story Cycle Time,process,5.3,3,2.3,0.23,30.0,True,Product Owner,2026-05-06 10:58
+334,3,433,3,Code Duplication,code_quality,23.1,5,18.1,0.85,80.9,True,Developer,2026-05-06 11:10
+335,4,434,7,MTTR,devops,9.6,4,5.6,0.24,30.0,False,Team Lead,2026-05-06 11:42
+336,5,435,12,Sprint Burndown Rate,process,69.2,90,20.8,0.39,40.0,False,Scrum Master,2026-05-06 11:57
+337,1,436,4,Technical Debt Ratio,code_quality,7.2,5,2.2,0.13,30.0,True,Team Lead,2026-05-06 12:33
+338,4,437,7,MTTR,devops,5.5,4,1.5,0.07,30.0,False,SRE,2026-05-06 13:04
+339,1,438,14,Backlog Growth Rate,process,9.5,5,4.5,0.16,30.0,False,Product Owner,2026-05-06 13:26
+340,5,439,2,Cyclomatic Complexity,code_quality,18.4,10,8.4,0.37,32.8,True,Team Lead,2026-05-06 14:03
+341,1,440,6,Deployment Frequency,devops,9.0,10,1.0,0.1,30.0,False,Team Lead,2026-05-06 14:36
+342,3,441,15,Story Cycle Time,process,3.4,3,0.4,0.04,30.0,True,Scrum Master,2026-05-06 14:43
+343,2,442,4,Technical Debt Ratio,code_quality,6.7,5,1.7,0.11,30.0,False,Developer,2026-05-06 15:01
+344,2,443,10,Build Success Rate,devops,86.9,95,8.1,0.23,30.0,False,Team Lead,2026-05-06 15:19
+345,3,444,12,Sprint Burndown Rate,process,88.3,90,1.7,0.03,30.0,True,Scrum Master,2026-05-06 15:42
+346,2,445,3,Code Duplication,code_quality,15.2,5,10.2,0.51,46.1,False,Developer,2026-05-06 16:13
+347,2,446,6,Deployment Frequency,devops,14.9,10,4.9,0.53,41.8,False,DevOps,2026-05-06 16:38
+348,4,447,12,Sprint Burndown Rate,process,85.7,90,4.3,0.08,30.0,True,Product Owner,2026-05-06 17:07
+349,3,448,4,Technical Debt Ratio,code_quality,3.4,5,1.6,0.1,30.0,True,QA Engineer,2026-05-06 17:35
+350,1,449,9,Lead Time for Changes,devops,91.3,24,67.3,0.84,63.1,False,Team Lead,2026-05-06 18:09
+351,4,450,13,Defect Density,process,8.6,2,6.6,0.8,69.5,False,Scrum Master,2026-05-06 18:31
+352,3,451,3,Code Duplication,code_quality,21.1,5,16.1,0.73,67.4,True,Team Lead,2026-05-06 18:39
+353,4,452,6,Deployment Frequency,devops,2.4,10,7.6,0.82,72.8,True,DevOps,2026-05-06 19:13
+354,3,453,11,Sprint Velocity,process,54.7,40,14.7,0.54,56.6,False,Team Lead,2026-05-06 19:28
+355,2,454,3,Code Duplication,code_quality,4.1,5,0.9,0.04,30.0,True,QA Engineer,2026-05-06 19:36
+356,1,455,9,Lead Time for Changes,devops,60.8,24,36.8,0.49,47.9,False,DevOps,2026-05-06 19:41
+357,1,456,12,Sprint Burndown Rate,process,68.6,90,21.4,0.37,30.3,True,Scrum Master,2026-05-06 20:07
+358,1,457,1,Code Coverage,code_quality,94.3,80,14.3,0.33,30.0,True,Team Lead,2026-05-06 20:18
+359,2,458,6,Deployment Frequency,devops,5.4,10,4.6,0.5,39.6,False,DevOps,2026-05-06 20:27
+360,2,459,15,Story Cycle Time,process,7.2,3,4.2,0.44,35.2,True,Scrum Master,2026-05-06 20:58
+361,5,460,5,Maintainability Index,code_quality,80.9,85,4.1,0.11,30.0,True,Developer,2026-05-06 21:27
+362,2,461,8,Change Failure Rate,devops,38.6,10,28.6,0.86,68.1,True,DevOps,2026-05-06 22:07
+363,3,462,15,Story Cycle Time,process,7.6,3,4.6,0.48,47.2,True,Team Lead,2026-05-06 22:25
+364,4,463,5,Maintainability Index,code_quality,77.3,85,7.7,0.19,30.0,True,Developer,2026-05-06 22:54
+365,3,464,6,Deployment Frequency,devops,4.4,10,5.6,0.59,45.5,False,DevOps,2026-05-06 23:19
+366,4,465,12,Sprint Burndown Rate,process,63.2,90,26.8,0.52,45.6,True,Scrum Master,2026-05-06 23:28
+367,5,466,1,Code Coverage,code_quality,72.3,80,7.7,0.16,30.0,False,Team Lead,2026-05-06 23:51
+368,5,467,10,Build Success Rate,devops,89.9,95,5.1,0.13,30.0,False,Team Lead,2026-05-07 00:05
+369,5,468,13,Defect Density,process,1.3,2,0.7,0.08,30.0,False,Scrum Master,2026-05-07 00:30
+370,4,469,4,Technical Debt Ratio,code_quality,12.6,5,7.6,0.49,46.3,True,Team Lead,2026-05-07 00:50
+371,3,470,6,Deployment Frequency,devops,4.4,10,5.6,0.62,48.7,False,DevOps,2026-05-07 01:06
+372,5,471,11,Sprint Velocity,process,15.5,40,24.5,0.85,64.0,True,Product Owner,2026-05-07 01:44
+373,1,472,3,Code Duplication,code_quality,5.8,5,0.8,0.03,30.0,True,Developer,2026-05-07 02:10
+374,4,473,9,Lead Time for Changes,devops,27.6,24,3.6,0.04,30.0,False,DevOps,2026-05-07 02:44
+375,1,474,15,Story Cycle Time,process,5.0,3,2.0,0.21,30.0,True,Product Owner,2026-05-07 02:56
+376,4,475,2,Cyclomatic Complexity,code_quality,23.5,10,13.5,0.57,57.4,True,Developer,2026-05-07 03:24
+377,4,476,9,Lead Time for Changes,devops,88.5,24,64.5,0.79,82.0,True,Team Lead,2026-05-07 03:43
+378,3,477,13,Defect Density,process,2.9,2,0.9,0.11,30.0,False,Team Lead,2026-05-07 03:55
+379,4,478,5,Maintainability Index,code_quality,80.3,85,4.7,0.12,30.0,True,Developer,2026-05-07 04:04
+380,1,479,9,Lead Time for Changes,devops,83.4,24,59.4,0.8,67.5,True,SRE,2026-05-07 04:32
+381,5,480,12,Sprint Burndown Rate,process,57.5,90,32.5,0.63,61.2,True,Product Owner,2026-05-07 05:08
+382,1,481,2,Cyclomatic Complexity,code_quality,23.3,10,13.3,0.62,61.3,True,Team Lead,2026-05-07 05:27
+383,4,482,10,Build Success Rate,devops,73.5,95,21.5,0.6,60.8,False,DevOps,2026-05-07 05:51
+384,3,483,11,Sprint Velocity,process,23.2,40,16.8,0.67,58.7,False,Scrum Master,2026-05-07 06:01
+385,4,484,1,Code Coverage,code_quality,90.7,80,10.7,0.26,30.0,True,Team Lead,2026-05-07 06:11
+386,1,485,10,Build Success Rate,devops,63.7,95,31.3,0.78,77.7,True,Team Lead,2026-05-07 06:43
+387,3,486,12,Sprint Burndown Rate,process,54.2,90,35.8,0.64,54.0,False,Team Lead,2026-05-07 07:08
+388,1,487,4,Technical Debt Ratio,code_quality,6.9,5,1.9,0.11,30.0,True,QA Engineer,2026-05-07 07:22
+389,4,488,6,Deployment Frequency,devops,3.3,10,6.7,0.68,59.3,False,DevOps,2026-05-07 07:46
+390,5,489,14,Backlog Growth Rate,process,0.6,5,4.4,0.15,30.0,True,Team Lead,2026-05-07 07:53
+391,4,490,2,Cyclomatic Complexity,code_quality,25.9,10,15.9,0.71,55.2,True,Team Lead,2026-05-07 08:30
+392,4,491,6,Deployment Frequency,devops,10.5,10,0.5,0.05,30.0,True,SRE,2026-05-07 09:10
+393,1,492,15,Story Cycle Time,process,3.7,3,0.7,0.07,30.0,True,Scrum Master,2026-05-07 09:29
+394,5,493,2,Cyclomatic Complexity,code_quality,10.0,10,0.0,0.0,30.0,False,Developer,2026-05-07 09:50
+395,1,494,6,Deployment Frequency,devops,1.3,10,8.7,0.83,84.7,False,DevOps,2026-05-07 10:16
+396,4,495,11,Sprint Velocity,process,16.7,40,23.3,0.86,68.8,True,Team Lead,2026-05-07 10:52
+397,3,496,1,Code Coverage,code_quality,61.1,80,18.9,0.43,36.8,False,Team Lead,2026-05-07 11:25
+398,5,497,7,MTTR,devops,1.8,4,2.2,0.1,30.0,True,SRE,2026-05-07 12:00
+399,2,498,11,Sprint Velocity,process,18.5,40,21.5,0.78,68.3,True,Team Lead,2026-05-07 12:39
+400,3,499,1,Code Coverage,code_quality,94.4,80,14.4,0.35,30.0,True,Team Lead,2026-05-07 13:16
+401,1,500,8,Change Failure Rate,devops,16.8,10,6.8,0.2,30.0,True,SRE,2026-05-07 13:51
+402,2,501,15,Story Cycle Time,process,4.9,3,1.9,0.2,30.0,True,Scrum Master,2026-05-07 14:13
+403,5,502,5,Maintainability Index,code_quality,86.7,85,1.7,0.05,30.0,False,Developer,2026-05-07 14:42
+404,3,503,8,Change Failure Rate,devops,37.5,10,27.5,0.92,73.8,True,SRE,2026-05-07 14:48
+405,5,504,13,Defect Density,process,9.5,2,7.5,0.88,80.9,True,Product Owner,2026-05-07 15:12
+406,4,505,2,Cyclomatic Complexity,code_quality,17.3,10,7.3,0.32,30.0,True,QA Engineer,2026-05-07 15:17
+407,1,506,8,Change Failure Rate,devops,36.9,10,26.9,0.79,62.3,False,SRE,2026-05-07 15:23
+408,1,507,12,Sprint Burndown Rate,process,75.2,90,14.8,0.29,30.0,False,Product Owner,2026-05-07 15:51
+409,4,508,4,Technical Debt Ratio,code_quality,12.5,5,7.5,0.45,38.1,False,QA Engineer,2026-05-07 16:27
+410,2,509,8,Change Failure Rate,devops,8.6,10,1.4,0.05,30.0,False,SRE,2026-05-07 16:43
+411,5,510,14,Backlog Growth Rate,process,2.3,5,2.7,0.1,30.0,False,Team Lead,2026-05-07 17:13
+412,5,511,5,Maintainability Index,code_quality,51.5,85,33.5,0.9,92.4,False,Developer,2026-05-07 17:24
+413,1,512,9,Lead Time for Changes,devops,15.2,24,8.8,0.12,30.0,False,DevOps,2026-05-07 17:50
+414,1,513,14,Backlog Growth Rate,process,-9.5,5,14.5,0.51,48.9,True,Scrum Master,2026-05-07 17:58
+415,3,514,4,Technical Debt Ratio,code_quality,9.9,5,4.9,0.3,30.0,True,Team Lead,2026-05-07 18:37
+416,2,515,9,Lead Time for Changes,devops,11.5,24,12.5,0.16,30.0,False,Team Lead,2026-05-07 18:52
+417,1,516,14,Backlog Growth Rate,process,-7.1,5,12.1,0.47,39.4,True,Scrum Master,2026-05-07 19:18
+418,3,517,2,Cyclomatic Complexity,code_quality,27.2,10,17.2,0.75,57.9,False,Developer,2026-05-07 19:53
+419,1,518,6,Deployment Frequency,devops,7.0,10,3.0,0.32,30.0,False,DevOps,2026-05-07 20:19
+420,3,519,12,Sprint Burndown Rate,process,98.5,90,8.5,0.15,30.0,False,Team Lead,2026-05-07 20:42
+421,1,520,3,Code Duplication,code_quality,7.5,5,2.5,0.11,30.0,False,Developer,2026-05-07 21:10
+422,1,521,6,Deployment Frequency,devops,7.0,10,3.0,0.3,30.0,False,DevOps,2026-05-07 21:16
+423,4,522,12,Sprint Burndown Rate,process,50.2,90,39.8,0.71,55.0,False,Product Owner,2026-05-07 21:51
+424,4,523,4,Technical Debt Ratio,code_quality,18.1,5,13.1,0.78,73.5,True,Team Lead,2026-05-07 22:19
+425,5,524,7,MTTR,devops,11.3,4,7.3,0.32,30.0,True,SRE,2026-05-07 22:27
+426,4,525,12,Sprint Burndown Rate,process,85.1,90,4.9,0.09,30.0,True,Team Lead,2026-05-07 22:46
+427,4,526,5,Maintainability Index,code_quality,52.7,85,32.3,0.84,76.2,False,QA Engineer,2026-05-07 23:06
+428,5,527,9,Lead Time for Changes,devops,30.1,24,6.1,0.08,30.0,True,Team Lead,2026-05-07 23:20
+429,2,528,11,Sprint Velocity,process,53.0,40,13.0,0.48,49.7,True,Scrum Master,2026-05-07 23:33
+430,2,529,1,Code Coverage,code_quality,63.3,80,16.7,0.42,37.0,False,QA Engineer,2026-05-07 23:54
+431,5,530,8,Change Failure Rate,devops,36.6,10,26.6,0.88,67.8,False,SRE,2026-05-08 00:19
+432,5,531,13,Defect Density,process,5.4,2,3.4,0.42,31.7,True,Team Lead,2026-05-08 00:50
+433,1,532,1,Code Coverage,code_quality,62.8,80,17.2,0.38,35.2,True,Developer,2026-05-08 01:01
+434,4,533,8,Change Failure Rate,devops,35.0,10,25.0,0.82,83.1,True,Team Lead,2026-05-08 01:36
+435,1,534,11,Sprint Velocity,process,21.9,40,18.1,0.66,61.7,True,Product Owner,2026-05-08 02:06
+436,1,535,3,Code Duplication,code_quality,17.9,5,12.9,0.55,49.1,True,Team Lead,2026-05-08 02:32
+437,2,536,8,Change Failure Rate,devops,13.8,10,3.8,0.12,30.0,False,DevOps,2026-05-08 02:56
+438,2,537,14,Backlog Growth Rate,process,21.0,5,16.0,0.57,55.2,True,Scrum Master,2026-05-08 03:29
+439,1,538,2,Cyclomatic Complexity,code_quality,27.8,10,17.8,0.81,72.5,True,Team Lead,2026-05-08 04:06
+440,5,539,7,MTTR,devops,2.5,4,1.5,0.07,30.0,False,Team Lead,2026-05-08 04:12
+441,1,540,12,Sprint Burndown Rate,process,51.6,90,38.4,0.75,75.1,True,Product Owner,2026-05-08 04:40
+442,1,541,2,Cyclomatic Complexity,code_quality,11.8,10,1.8,0.09,30.0,True,Developer,2026-05-08 05:00
+443,3,542,8,Change Failure Rate,devops,20.6,10,10.6,0.32,33.2,False,Team Lead,2026-05-08 05:27
+444,4,543,12,Sprint Burndown Rate,process,90.3,90,0.3,0.01,30.0,True,Scrum Master,2026-05-08 05:35
+445,2,544,2,Cyclomatic Complexity,code_quality,26.3,10,16.3,0.79,64.3,True,Developer,2026-05-08 05:57
+446,2,545,9,Lead Time for Changes,devops,50.2,24,26.2,0.36,37.4,False,SRE,2026-05-08 06:13
+447,3,546,15,Story Cycle Time,process,9.8,3,6.8,0.67,62.5,False,Team Lead,2026-05-08 06:45
+448,5,547,4,Technical Debt Ratio,code_quality,17.3,5,12.3,0.75,61.2,True,QA Engineer,2026-05-08 07:15
+449,5,548,10,Build Success Rate,devops,64.0,95,31.0,0.82,77.8,False,SRE,2026-05-08 07:38
+450,3,549,13,Defect Density,process,7.0,2,5.0,0.58,49.4,True,Product Owner,2026-05-08 07:59
+451,4,550,3,Code Duplication,code_quality,6.3,5,1.3,0.06,30.0,True,QA Engineer,2026-05-08 08:24
+452,4,551,7,MTTR,devops,17.6,4,13.6,0.64,67.2,True,SRE,2026-05-08 08:53
+453,2,552,11,Sprint Velocity,process,38.3,40,1.7,0.07,30.0,True,Team Lead,2026-05-08 09:32
+454,5,553,4,Technical Debt Ratio,code_quality,18.3,5,13.3,0.84,75.8,False,QA Engineer,2026-05-08 09:48
+455,3,554,8,Change Failure Rate,devops,5.7,10,4.3,0.12,30.0,False,DevOps,2026-05-08 09:58
+456,3,555,12,Sprint Burndown Rate,process,61.3,90,28.7,0.55,46.3,False,Product Owner,2026-05-08 10:19
+457,5,556,5,Maintainability Index,code_quality,63.2,85,21.8,0.61,54.4,False,QA Engineer,2026-05-08 10:28
+458,4,557,9,Lead Time for Changes,devops,85.6,24,61.6,0.79,79.8,True,SRE,2026-05-08 10:36
+459,2,558,12,Sprint Burndown Rate,process,48.2,90,41.8,0.74,64.6,True,Product Owner,2026-05-08 11:01
+460,1,559,2,Cyclomatic Complexity,code_quality,24.5,10,14.5,0.67,62.9,True,QA Engineer,2026-05-08 11:06
+461,1,560,9,Lead Time for Changes,devops,27.7,24,3.7,0.05,30.0,False,SRE,2026-05-08 11:19
+462,1,561,15,Story Cycle Time,process,5.8,3,2.8,0.28,30.0,True,Scrum Master,2026-05-08 11:58
+463,2,562,2,Cyclomatic Complexity,code_quality,23.3,10,13.3,0.66,67.2,True,QA Engineer,2026-05-08 12:04
+464,1,563,6,Deployment Frequency,devops,9.8,10,0.2,0.02,30.0,True,DevOps,2026-05-08 12:33
+465,4,564,15,Story Cycle Time,process,7.5,3,4.5,0.44,43.9,True,Product Owner,2026-05-08 13:11
+466,3,565,5,Maintainability Index,code_quality,73.6,85,11.4,0.3,30.0,True,Team Lead,2026-05-08 13:28
+467,2,566,7,MTTR,devops,22.8,4,18.8,0.93,81.0,True,Team Lead,2026-05-08 13:46
+468,4,567,11,Sprint Velocity,process,38.6,40,1.4,0.05,30.0,True,Scrum Master,2026-05-08 14:07
+469,1,568,5,Maintainability Index,code_quality,78.0,85,7.0,0.19,30.0,True,Developer,2026-05-08 14:19
+470,1,569,9,Lead Time for Changes,devops,43.8,24,19.8,0.24,30.0,False,DevOps,2026-05-08 14:43
+471,4,570,14,Backlog Growth Rate,process,16.5,5,11.5,0.44,36.6,True,Scrum Master,2026-05-08 14:54
+472,5,571,5,Maintainability Index,code_quality,82.3,85,2.7,0.07,30.0,True,Developer,2026-05-08 15:11
+473,1,572,8,Change Failure Rate,devops,33.6,10,23.6,0.78,66.9,False,DevOps,2026-05-08 15:51
+474,1,573,14,Backlog Growth Rate,process,26.4,5,21.4,0.82,73.3,True,Scrum Master,2026-05-08 16:03
+475,1,574,5,Maintainability Index,code_quality,80.1,85,4.9,0.12,30.0,True,QA Engineer,2026-05-08 16:24
+476,1,575,7,MTTR,devops,11.5,4,7.5,0.37,30.7,True,DevOps,2026-05-08 16:47
+477,1,576,13,Defect Density,process,8.1,2,6.1,0.68,66.1,True,Scrum Master,2026-05-08 17:00
+478,1,577,2,Cyclomatic Complexity,code_quality,13.2,10,3.2,0.16,30.0,True,QA Engineer,2026-05-08 17:28
+479,4,578,8,Change Failure Rate,devops,8.9,10,1.1,0.03,30.0,True,SRE,2026-05-08 17:59
+480,1,579,12,Sprint Burndown Rate,process,46.8,90,43.2,0.82,62.9,False,Scrum Master,2026-05-08 18:30
+481,5,580,5,Maintainability Index,code_quality,71.7,85,13.3,0.36,31.7,True,Team Lead,2026-05-08 18:36
+482,3,581,7,MTTR,devops,12.1,4,8.1,0.37,37.6,False,DevOps,2026-05-08 19:01
+483,2,582,11,Sprint Velocity,process,43.2,40,3.2,0.12,30.0,True,Team Lead,2026-05-08 19:27
+484,4,583,5,Maintainability Index,code_quality,73.5,85,11.5,0.31,30.0,True,Developer,2026-05-08 19:54
+485,2,584,9,Lead Time for Changes,devops,16.0,24,8.0,0.11,30.0,False,DevOps,2026-05-08 20:31
+486,3,585,14,Backlog Growth Rate,process,24.1,5,19.1,0.75,57.9,True,Scrum Master,2026-05-08 20:53
+487,4,586,1,Code Coverage,code_quality,67.9,80,12.1,0.28,30.0,True,Developer,2026-05-08 21:26
+488,1,587,10,Build Success Rate,devops,77.5,95,17.5,0.49,43.3,True,SRE,2026-05-08 21:37
+489,5,588,14,Backlog Growth Rate,process,6.5,5,1.5,0.06,30.0,True,Team Lead,2026-05-08 22:01
+490,2,589,5,Maintainability Index,code_quality,75.3,85,9.7,0.26,30.0,True,Developer,2026-05-08 22:35
+491,4,590,8,Change Failure Rate,devops,23.3,10,13.3,0.42,37.5,False,Team Lead,2026-05-08 22:47
+492,5,591,11,Sprint Velocity,process,45.4,40,5.4,0.19,30.0,False,Product Owner,2026-05-08 23:25
+493,4,592,3,Code Duplication,code_quality,18.1,5,13.1,0.56,44.8,True,QA Engineer,2026-05-08 23:36
+494,2,593,8,Change Failure Rate,devops,25.2,10,15.2,0.44,45.3,False,SRE,2026-05-09 00:02
+495,4,594,11,Sprint Velocity,process,45.3,40,5.3,0.18,30.0,True,Scrum Master,2026-05-09 00:36
+496,5,595,5,Maintainability Index,code_quality,93.0,85,8.0,0.2,30.0,True,Developer,2026-05-09 01:08
+497,2,596,10,Build Success Rate,devops,78.8,95,16.2,0.43,44.1,True,Team Lead,2026-05-09 01:21
+498,4,597,11,Sprint Velocity,process,30.5,40,9.5,0.36,36.5,True,Product Owner,2026-05-09 01:41
+499,4,598,3,Code Duplication,code_quality,11.2,5,6.2,0.28,30.0,True,Developer,2026-05-09 02:18
+500,2,599,8,Change Failure Rate,devops,34.0,10,24.0,0.75,63.3,False,Team Lead,2026-05-09 02:35

@@ -4,7 +4,9 @@
   --surface-raised: rgba(30, 39, 58, 0.85);
   --surface-opaque: #161c29;
   --border: rgba(255, 255, 255, 0.08);
+  --border-subtle: rgba(255, 255, 255, 0.04);
   --border-active: rgba(255, 255, 255, 0.18);
+  --accent-primary: #8b5cf6;
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;

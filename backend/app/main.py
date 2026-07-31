@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import crud, schemas
-from app.routers import projects, metrics, recommendations, feedback
+from app.routers import projects, metrics, recommendations, feedback, admin, analytics
 
 app = FastAPI(
     title="Agentic AI-Based Software Metrics Prioritization and Recommendation System",
@@ -27,6 +27,8 @@ app.include_router(projects.router)
 app.include_router(metrics.router)
 app.include_router(recommendations.router)
 app.include_router(feedback.router)
+app.include_router(admin.router)
+app.include_router(analytics.router)
 
 
 @app.get("/")

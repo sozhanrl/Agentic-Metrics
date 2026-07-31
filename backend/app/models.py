@@ -1,6 +1,6 @@
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, Numeric, TIMESTAMP,
-    ForeignKey, ARRAY, BigInteger
+    ForeignKey, ARRAY, BigInteger, Index
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
@@ -66,3 +66,116 @@ class RecommendationFeedback(Base):
     outcome_metric_id = Column(Integer, ForeignKey("metric_definitions.id"), nullable=True)
     outcome_delta = Column(Numeric, nullable=True)
     created_at = Column(TIMESTAMP, server_default=func.now())
+
+    # --- Extended analytics columns (populated by CSV seed / rich feedback API) ---
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
+    metric_id = Column(Integer, ForeignKey("metric_definitions.id"), nullable=True)
+    metric_name = Column(String(255), nullable=True)
+    category = Column(String(50), nullable=True)      # code_quality | process | devops
+    actual_value = Column(Numeric, nullable=True)
+    target_value = Column(Numeric, nullable=True)
+    deviation = Column(Numeric, nullable=True)
+    severity = Column(Numeric, nullable=True)
+    priority_score = Column(Numeric, nullable=True)
+    user_role = Column(String(100), nullable=True)    # Developer | QA Engineer | SRE | ...
+    feedback_at = Column(TIMESTAMP, nullable=True)    # timestamp from the CSV / submission
+
+
+class ProjectRiskProfile(Base):
+    """Per-project context used by the adaptive weighting engine."""
+    __tablename__ = "project_risk_profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False, unique=True)
+    team_size = Column(Integer, nullable=True)
+    tech_debt_index = Column(Numeric(4, 3), default=0.5)   # 0.0 (clean) – 1.0 (severe)
+    risk_tolerance = Column(String(20), default="medium")  # low | medium | high
+    deployment_env = Column(String(50), nullable=True)     # cloud | on-prem | hybrid
+    notes = Column(Text, nullable=True)
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+
+
+class CategoryWeightHistory(Base):
+    """Append-only audit ledger of every category weight change."""
+    __tablename__ = "category_weight_history"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    category = Column(String(50), nullable=False)           # code_quality | process | devops
+    old_weight = Column(Numeric(6, 4), nullable=False)
+    new_weight = Column(Numeric(6, 4), nullable=False)
+    source = Column(String(50), default="manual")           # manual | self_learning
+    reason = Column(Text, nullable=True)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+
+class MetricDependencyGraph(Base):
+    """
+    Append-only audit ledger of discovered metric-to-metric dependency edges
+    (Pillar 3 — Metric Dependency Discovery).
+
+    Every discovery run appends new rows; rows are never overwritten.
+    This mirrors the audit-trail pattern of category_weight_history:
+    the full evolution of the dependency graph is reproducible from this
+    table alone.
+    """
+    __tablename__ = "metric_dependency_graph"
+
+    id                = Column(BigInteger, primary_key=True, index=True)
+    project_id        = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    source_metric_key = Column(String(100), nullable=False)
+    target_metric_key = Column(String(100), nullable=False)
+    lag_periods       = Column(Integer, nullable=False, default=0)
+    # NUMERIC(5,4): 5 total digits, 4 decimal places → [-9.9999 … 9.9999]
+    # Covers all valid Pearson r values in [-1, +1] with headroom.
+    correlation       = Column(Numeric(5, 4), nullable=False)
+    sample_size       = Column(Integer, nullable=False)
+    confidence        = Column(String(20), nullable=False)   # high | medium | low
+    reason            = Column(Text, nullable=True)
+    discovered_at     = Column(TIMESTAMP, nullable=False, server_default=func.now())
+
+    # Composite index matching the DDL spec — accelerates
+    # crud.get_latest_dependency_edges (queries by project, deduplicates
+    # by target, ordered by most-recent discovered_at).
+    __table_args__ = (
+        Index(
+            "idx_dependency_graph_project_target",
+            "project_id", "target_metric_key", "discovered_at",
+        ),
+    )
+
+
+class MetricWeight(Base):
+    """
+    Per-metric learning state table (v3 — metric_weights).
+
+    Unlike CategoryWeightHistory (append-only audit ledger), this table is
+    UPSERTED: it always holds the CURRENT learning state for each
+    (project_id, metric_name) pair.
+
+    Fields
+    ------
+    weight       : Multiplicative factor applied on top of category weight during
+                   scoring.  Starts at 1.0 (neutral / no adjustment).
+    confidence   : 0–1 fraction of confidence_sample_target reached.
+                   Distinguishes "weight=1.4 from 500 samples" vs "from 10 samples".
+    sample_count : Decay-weighted total of feedback samples seen (float because
+                   exponential decay makes it non-integer).
+    trend        : Direction the weight is moving — 'increasing' | 'decreasing' | 'stable'.
+    last_updated : When the self-learning engine last wrote this row.
+    """
+    __tablename__ = "metric_weights"
+
+    id           = Column(BigInteger, primary_key=True, index=True)
+    project_id   = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    metric_name  = Column(String(255), nullable=False)     # matches metric_definitions.key
+    weight       = Column(Numeric(8, 4), nullable=False, default=1.0)
+    confidence   = Column(Numeric(5, 4), nullable=False, default=0.0)  # 0=uninformed, 1=max confident
+    sample_count = Column(Numeric(10, 4), nullable=False, default=0.0) # decay-weighted sample sum
+    trend        = Column(String(20), nullable=False, default="stable") # increasing|decreasing|stable
+    last_updated = Column(TIMESTAMP, nullable=False, server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        Index("idx_metric_weights_project", "project_id"),
+        {"extend_existing": True},
+    )

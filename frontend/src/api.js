@@ -34,4 +34,28 @@ export const api = {
 
   seedDemoData: (projectId) =>
     request(`/dev/seed/${projectId}`, { method: "POST" }),
+
+  getWeightComparison: (projectId) =>
+    request(`/admin/weights/compare/${projectId}`),
+
+  // ---- Analytics ----
+  getFeedbackFilters: () => request("/analytics/feedback/filters"),
+
+  getFeedbackSummary: ({ projectId, category, userRole } = {}) => {
+    const params = new URLSearchParams();
+    if (projectId != null) params.set("project_id", projectId);
+    if (category) params.set("category", category);
+    if (userRole) params.set("user_role", userRole);
+    const qs = params.toString();
+    return request(`/analytics/feedback/summary${qs ? "?" + qs : ""}`);
+  },
+
+  getFeedbackRows: ({ projectId, category, userRole } = {}) => {
+    const params = new URLSearchParams();
+    if (projectId != null) params.set("project_id", projectId);
+    if (category) params.set("category", category);
+    if (userRole) params.set("user_role", userRole);
+    const qs = params.toString();
+    return request(`/analytics/feedback/rows${qs ? "?" + qs : ""}`);
+  },
 };

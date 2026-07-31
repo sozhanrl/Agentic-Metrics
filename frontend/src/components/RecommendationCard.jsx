@@ -7,6 +7,138 @@ function priorityTier(score) {
   return { label: "Watch", className: "watch" };
 }
 
+/* Map each agent name to a CSS class for its colored chip */
+const AGENT_CLASS = {
+  Perceiver:        "perceiver",
+  AdaptiveWeighter: "adaptive-weighter",
+  Evaluator:        "evaluator",
+  Negotiator:       "negotiator",
+  Explainer:        "explainer",
+};
+
+/* Human-readable action labels */
+function actionLabel(action) {
+  const map = {
+    "static-evaluation":         "Static eval",
+    "trend-amplification":       "Trend ↑ amplified",
+    "trend-ok":                  "Trend OK",
+    "trend-skipped":             "No trend data",
+    "skipped":                   "Skipped",
+    "no-profile":                "No risk profile",
+    "tech-debt-adjustment":      "Tech-debt adj.",
+    "risk-tolerance-adjustment": "Risk-tolerance adj.",
+    "small-team-adjustment":     "Small-team adj.",
+    "team-size-ok":              "Team size OK",
+    "scoring":                   "Scored",
+    "below-threshold":           "Below threshold",
+    "dependency-note":           "Dependency",
+    "conflict-penalty":          "Conflict penalty",
+    "conflict-noted":            "Conflict noted",
+    "explanation":               "Explained",
+  };
+  return map[action] || action;
+}
+
+/* Trend arrow based on slope + direction */
+function TrendIndicator({ slope, recommendation }) {
+  const hasConflict = !!recommendation.conflict_note;
+  const hasSlope    = typeof slope === "number" && slope !== 0;
+
+  if (!hasSlope && !hasConflict) return null;
+
+  let arrow = "→", arrowClass = "trend-flat";
+  if (hasSlope) {
+    arrow      = slope > 0 ? "↑" : "↓";
+    arrowClass = slope > 0 ? "trend-up" : "trend-down";
+  }
+
+  return (
+    <div className="trend-row">
+      {hasSlope && (
+        <span className={`trend-indicator ${arrowClass}`}>
+          {arrow} slope {slope > 0 ? "+" : ""}{slope.toFixed(3)}/period
+        </span>
+      )}
+      {hasConflict && (
+        <span className="conflict-badge" title={recommendation.conflict_note}>
+          ⚡ Negotiated — priority reduced
+        </span>
+      )}
+    </div>
+  );
+}
+
+/* Adaptive Weights pill row */
+function WeightsPills({ weights }) {
+  if (!weights || Object.keys(weights).length === 0) return null;
+
+  const labels = {
+    code_quality: "Code Quality",
+    process:      "Process",
+    devops:       "DevOps",
+  };
+
+  return (
+    <div className="weights-section">
+      <div className="agent-trace-label">Adaptive weights this run</div>
+      <div className="weights-row">
+        {Object.entries(weights).map(([cat, val]) => (
+          <span key={cat} className={`weight-pill weight-${cat.replace("_", "-")}`}>
+            {labels[cat] || cat} ×{Number(val).toFixed(2)}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* Agent Trail timeline */
+function AgentTrail({ steps }) {
+  const [collapsed, setCollapsed] = useState(true);
+
+  if (!steps || steps.length === 0) return null;
+
+  const visibleSteps = collapsed ? steps.slice(0, 4) : steps;
+
+  return (
+    <div className="agent-trace-section">
+      <div
+        className="agent-trace-label clickable"
+        onClick={() => setCollapsed((c) => !c)}
+        role="button"
+        aria-expanded={!collapsed}
+      >
+        Agent pipeline trace
+        <span className="trace-toggle">{collapsed ? `+${steps.length - Math.min(4, steps.length)} more` : "collapse"}</span>
+      </div>
+
+      <div className="agent-step-list">
+        {visibleSteps.map((step, i) => {
+          const agentClass = AGENT_CLASS[step.agent] || "unknown";
+          return (
+            <div key={i} className="agent-step-row">
+              <div className="step-left">
+                <span className={`agent-chip agent-chip--${agentClass}`}>{step.agent}</span>
+                <span className="action-badge">{actionLabel(step.action)}</span>
+              </div>
+              <div className="step-detail">{step.detail}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {collapsed && steps.length > 4 && (
+        <button
+          className="trace-expand-btn"
+          onClick={() => setCollapsed(false)}
+        >
+          Show all {steps.length} pipeline steps
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function RecommendationCard({ recommendation, rank, onStatusChange }) {
   const [open, setOpen] = useState(false);
   const [wasHelpful, setWasHelpful] = useState(null);
@@ -47,6 +179,10 @@ export default function RecommendationCard({ recommendation, rank, onStatusChang
     }
   };
 
+  const hasAgentTrail = recommendation.agent_trail?.length > 0;
+  const hasWeights    = recommendation.adaptive_weights &&
+                        Object.keys(recommendation.adaptive_weights).length > 0;
+
   return (
     <div className={`rec-card ${tier.className}`}>
       <div className="rec-header" onClick={() => setOpen(!open)}>
@@ -56,6 +192,11 @@ export default function RecommendationCard({ recommendation, rank, onStatusChang
           <div className="rec-title-row">
             <span className={`tier-badge ${tier.className}`}>{tier.label}</span>
             <h3 className="rec-title">{recommendation.title}</h3>
+            {hasAgentTrail && (
+              <span className="multi-agent-badge" title="Generated by multi-agent pipeline">
+                🤖 Multi-Agent
+              </span>
+            )}
           </div>
           <p className="rec-explanation">{recommendation.explanation}</p>
         </div>
@@ -77,6 +218,8 @@ export default function RecommendationCard({ recommendation, rank, onStatusChang
 
       {open && (
         <div className="reasoning-trail">
+
+          {/* ── Reasoning Trail ── */}
           <div className="reasoning-trail-label">Agent reasoning trail</div>
           <ol className="trail-list">
             {recommendation.reasoning_trail.map((step, i) => (
@@ -87,6 +230,23 @@ export default function RecommendationCard({ recommendation, rank, onStatusChang
             ))}
           </ol>
 
+          {/* ── Trend + Conflict Note ── */}
+          <TrendIndicator
+            slope={recommendation.trend_slope}
+            recommendation={recommendation}
+          />
+
+          {/* ── Adaptive Weights ── */}
+          {hasWeights && (
+            <WeightsPills weights={recommendation.adaptive_weights} />
+          )}
+
+          {/* ── Agent Pipeline Trace ── */}
+          {hasAgentTrail && (
+            <AgentTrail steps={recommendation.agent_trail} />
+          )}
+
+          {/* ── Status + Feedback ── */}
           <div className="rec-actions" onClick={(e) => e.stopPropagation()}>
             <div className="rec-actions-left">
               <label htmlFor={`status-${recommendation.id}`}>Status:</label>

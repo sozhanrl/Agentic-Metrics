@@ -1,6 +1,22 @@
 -- ============================================================
 -- Agentic Software Metrics Prioritization System - DB Schema
 -- ============================================================
+--
+-- Migration history
+-- -----------------
+-- v1 (initial)      : Core tables — projects, metric_definitions, metric_values,
+--                     recommendations, recommendation_feedback, project_risk_profiles,
+--                     category_weight_history.  Applied via migrate.py.
+-- v2 (dependency)   : Added metric_dependency_graph table + composite index.
+--                     Applied via migrate_dependency_v2.py.
+-- v3 (metric_weights): Added metric_weights table for per-metric self-learning
+--                     granularity with confidence, sample_count, and trend tracking.
+--                     Applied via migrate_metric_weights.py.
+--
+-- This file is the CANONICAL single-source schema.  All tables and indexes are
+-- documented here; running the migration scripts on a fresh DB produces the same
+-- result as running this file directly.
+-- ============================================================
 
 -- Projects being tracked (maps to an Azure DevOps project / GitHub repo)
 CREATE TABLE projects (
@@ -61,6 +77,35 @@ CREATE TABLE recommendation_feedback (
     created_at          TIMESTAMP DEFAULT NOW()
 );
 
+-- Per-project context that the adaptive weighting engine uses to adjust category weights.
+-- risk_tolerance: 'low' | 'medium' | 'high'  (low = boost devops/process weights)
+-- tech_debt_index: 0.0 – 1.0 (high = boost code_quality weight)
+CREATE TABLE project_risk_profiles (
+    id                  SERIAL PRIMARY KEY,
+    project_id          INTEGER NOT NULL UNIQUE REFERENCES projects(id),
+    team_size           INTEGER,                    -- head count; small teams weight process less
+    tech_debt_index     NUMERIC(4,3) DEFAULT 0.5,   -- 0 = clean  1 = severe debt
+    risk_tolerance      VARCHAR(20) DEFAULT 'medium',-- low | medium | high
+    deployment_env      VARCHAR(50),                -- 'cloud' | 'on-prem' | 'hybrid'
+    notes               TEXT,
+    updated_at          TIMESTAMP DEFAULT NOW()
+);
+
+-- Append-only ledger of every weight update (manual or self-learning driven).
+-- Enables auditing and gives the self-learning loop its own history to work with.
+CREATE TABLE category_weight_history (
+    id              BIGSERIAL PRIMARY KEY,
+    project_id      INTEGER NOT NULL REFERENCES projects(id),
+    category        VARCHAR(50) NOT NULL,           -- code_quality | process | devops
+    old_weight      NUMERIC(6,4) NOT NULL,
+    new_weight      NUMERIC(6,4) NOT NULL,
+    source          VARCHAR(50) DEFAULT 'manual',   -- 'manual' | 'self_learning'
+    reason          TEXT,                           -- human-readable explanation of why
+    created_at      TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_weight_history_project_time ON category_weight_history(project_id, created_at);
+
 -- Seed some common metric definitions to start with
 INSERT INTO metric_definitions (key, display_name, category, source, unit, higher_is_better, description) VALUES
 ('code_churn', 'Code Churn', 'code_quality', 'github', '%', FALSE, 'Percentage of recently written code that is modified soon after'),
@@ -73,3 +118,57 @@ INSERT INTO metric_definitions (key, display_name, category, source, unit, highe
 ('deployment_frequency', 'Deployment Frequency', 'devops', 'github', 'per week', TRUE, 'How often code is deployed to production'),
 ('change_failure_rate', 'Change Failure Rate', 'devops', 'github', '%', FALSE, 'Percentage of deployments causing a failure'),
 ('mttr', 'Mean Time to Recovery', 'devops', 'github', 'hours', FALSE, 'Average time to recover from a failure');
+
+-- ============================================================
+-- v2: Metric Dependency Graph (added by migrate_dependency_v2.py)
+-- ============================================================
+-- Append-only audit ledger of discovered metric-to-metric dependency edges.
+-- Each run of the Dependency Discovery engine appends new rows; existing rows
+-- are never overwritten, preserving the full evolution of the learned graph.
+CREATE TABLE metric_dependency_graph (
+    id                  BIGSERIAL PRIMARY KEY,
+    project_id          INTEGER NOT NULL REFERENCES projects(id),
+    source_metric_key   VARCHAR(100) NOT NULL,
+    target_metric_key   VARCHAR(100) NOT NULL,
+    lag_periods         INTEGER NOT NULL DEFAULT 0,  -- weeks X leads Y by this many periods
+    correlation         NUMERIC(5, 4) NOT NULL,       -- Pearson r [-1, +1] rounded to 4dp
+    sample_size         INTEGER NOT NULL,
+    confidence          VARCHAR(20) NOT NULL,          -- 'high' | 'medium' | 'low'
+    reason              TEXT,                          -- human-readable discovery rationale
+    discovered_at       TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Composite index: accelerates crud.get_latest_dependency_edges(), which filters
+-- by project_id and needs the most-recent discovered_at per (source, target) pair.
+CREATE INDEX idx_dependency_graph_project_target
+    ON metric_dependency_graph(project_id, target_metric_key, discovered_at DESC);
+
+
+-- ============================================================
+-- v3: Per-Metric Weights (added by migrate_metric_weights.py)
+-- ============================================================
+-- Per-metric learning state maintained by the self-learning engine.
+-- Unlike category_weight_history (append-only ledger), this table is UPSERTED —
+-- it always holds the CURRENT learning state for each (project, metric) pair.
+-- Full history is recoverable from the sequence of upserts in the audit log.
+--
+-- weight        : multiplicative adjustment applied on top of category weight
+-- confidence    : 0–1, fraction of `confidence_sample_target` reached
+--                 (distinguishes a weight from 500 samples vs. 10 samples)
+-- sample_count  : total decay-weighted feedback samples seen for this metric
+-- trend         : 'increasing' | 'decreasing' | 'stable' based on recent delta
+-- last_updated  : when the self-learning engine last wrote this row
+CREATE TABLE metric_weights (
+    id              BIGSERIAL PRIMARY KEY,
+    project_id      INTEGER NOT NULL REFERENCES projects(id),
+    metric_name     VARCHAR(255) NOT NULL,             -- matches metric_definitions.key
+    weight          NUMERIC(8, 4) NOT NULL DEFAULT 1.0,
+    confidence      NUMERIC(5, 4) NOT NULL DEFAULT 0.0, -- 0.0 = uninformed, 1.0 = fully confident
+    sample_count    NUMERIC(10, 4) NOT NULL DEFAULT 0.0, -- decay-weighted sample sum
+    trend           VARCHAR(20) NOT NULL DEFAULT 'stable', -- 'increasing' | 'decreasing' | 'stable'
+    last_updated    TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE (project_id, metric_name)
+);
+
+CREATE INDEX idx_metric_weights_project ON metric_weights(project_id);
+

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import Sidebar from "./components/Sidebar";
 import RecommendationCard from "./components/RecommendationCard";
 import MetricCard from "./components/MetricCard";
+import FeedbackAnalytics from "./components/FeedbackAnalytics";
 import { api } from "./api";
 import "./App.css";
 
@@ -37,6 +38,9 @@ export default function App() {
   const [newProject, setNewProject] = useState({ name: "", source: "github", external_id: "" });
   const [aiEnabled, setAiEnabled] = useState(false);
 
+  // Top-level view: "project" | "analytics"
+  const [appView, setAppView] = useState("project");
+
   // Filter & Queue tabs states
   const [activeTab, setActiveTab] = useState("open");
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,6 +49,11 @@ export default function App() {
   // Modal state
   const [selectedMetric, setSelectedMetric] = useState(null);
   const [hoveredPoint, setHoveredPoint] = useState(null);
+
+  // Weight Lens panel
+  const [weightLensOpen, setWeightLensOpen] = useState(false);
+  const [weightLens, setWeightLens] = useState(null);
+  const [weightLensLoading, setWeightLensLoading] = useState(false);
 
   const loadProjectData = useCallback(async (projectId) => {
     if (!projectId) return;
@@ -131,6 +140,27 @@ export default function App() {
     } catch (e) {
       setError(e.message);
     }
+  }
+
+  async function handleLoadWeightLens() {
+    if (!activeProjectId) return;
+    setWeightLensLoading(true);
+    try {
+      const data = await api.getWeightComparison(activeProjectId);
+      setWeightLens(data);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setWeightLensLoading(false);
+    }
+  }
+
+  function handleToggleWeightLens() {
+    setWeightLensOpen((o) => {
+      const next = !o;
+      if (next && !weightLens) handleLoadWeightLens();
+      return next;
+    });
   }
 
   // Get count of recommendations by status
@@ -323,11 +353,44 @@ export default function App() {
 
       <main className="main-panel">
         <header className="top-bar">
-          <div>
-            <h1 className="page-title">
-              {projects.find((p) => p.id === activeProjectId)?.name || "No project selected"}
-            </h1>
-            <p className="page-subtitle">Telemetry-driven prioritization &amp; actions</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+            <div>
+              <h1 className="page-title">
+                {appView === "analytics"
+                  ? "Feedback Analytics"
+                  : projects.find((p) => p.id === activeProjectId)?.name || "No project selected"}
+              </h1>
+              <p className="page-subtitle">
+                {appView === "analytics"
+                  ? "AI recommendation helpfulness insights"
+                  : "Telemetry-driven prioritization & actions"}
+              </p>
+            </div>
+            {/* View switcher */}
+            <div style={{
+              display: "flex", gap: 4,
+              background: "var(--surface-raised)",
+              border: "1px solid var(--border)",
+              borderRadius: 10, padding: 3,
+              marginLeft: 8,
+            }}>
+              {[
+                { key: "project",   label: "🏗️ Dashboard" },
+                { key: "analytics", label: "📊 Analytics" },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setAppView(key)}
+                  style={{
+                    border: "none", cursor: "pointer",
+                    padding: "5px 14px", borderRadius: 7, fontSize: 12, fontWeight: 600,
+                    background: appView === key ? "var(--accent-primary)" : "transparent",
+                    color: appView === key ? "#fff" : "var(--text-muted)",
+                    transition: "all 0.2s",
+                  }}
+                >{label}</button>
+              ))}
+            </div>
           </div>
 
           <div className="top-actions">
@@ -371,13 +434,20 @@ export default function App() {
 
         {error && <div className="error-banner">{error}</div>}
 
-        {!activeProjectId && !error && (
+        {/* Analytics view — always renderable, no project required */}
+        {appView === "analytics" && (
+          <div style={{ padding: "24px 0" }}>
+            <FeedbackAnalytics />
+          </div>
+        )}
+
+        {appView === "project" && !activeProjectId && !error && (
           <div className="empty-state">
             <p>No project selected yet. Create one to get started.</p>
           </div>
         )}
 
-        {activeProjectId && (
+        {appView === "project" && activeProjectId && (
           <>
             <section className="kpi-strip">
               <div className="kpi-card">
@@ -393,6 +463,117 @@ export default function App() {
                 <div className="kpi-label">Metrics tracked</div>
               </div>
             </section>
+
+            {/* ── Weight Lens Panel ── */}
+            <div className="weight-lens">
+              <div
+                className={`weight-lens-header ${weightLensOpen ? "open" : ""}`}
+                onClick={handleToggleWeightLens}
+              >
+                <div className="weight-lens-title">
+                  <span className="weight-lens-icon">⚖️</span>
+                  Weight Lens
+                  <span className="weight-lens-subtitle">Base prior → Self-learned → Adaptive context</span>
+                </div>
+                <div className="weight-lens-actions" onClick={(e) => e.stopPropagation()}>
+                  {weightLensOpen && (
+                    <button
+                      className="weight-lens-refresh"
+                      onClick={handleLoadWeightLens}
+                      disabled={weightLensLoading}
+                    >
+                      {weightLensLoading ? "Loading…" : "↺ Refresh"}
+                    </button>
+                  )}
+                  <span className={`weight-lens-chevron ${weightLensOpen ? "open" : ""}`}>▼</span>
+                </div>
+              </div>
+
+              {weightLensOpen && (
+                <div className="weight-lens-body">
+                  {weightLensLoading && !weightLens && (
+                    <div style={{ color: "var(--text-muted)", fontSize: "13px" }}>Loading weight data…</div>
+                  )}
+
+                  {weightLens && (
+                    <>
+                      {!weightLens.has_risk_profile && (
+                        <div className="weight-lens-no-profile">
+                          ⚠️ No risk profile set for this project — adaptive context equals self-learned weights.
+                          Set a risk profile via the API to enable context-aware adjustments.
+                        </div>
+                      )}
+
+                      <table className="weight-table">
+                        <thead>
+                          <tr>
+                            <th>Category</th>
+                            <th>Base Prior</th>
+                            <th>Self-Learned</th>
+                            <th>Adaptive Context</th>
+                            <th>Effective</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.keys(weightLens.base_prior).map((cat) => {
+                            const base  = weightLens.base_prior[cat];
+                            const sl    = weightLens.self_learned[cat];
+                            const adapt = weightLens.adaptive_context[cat];
+                            const eff   = weightLens.effective[cat];
+                            const slChanged    = Math.abs(sl - base) > 0.005;
+                            const adaptChanged = Math.abs(adapt - sl) > 0.005;
+                            const effDelta = eff - base;
+                            const labels = { code_quality: "Code Quality", process: "Process", devops: "DevOps" };
+                            return (
+                              <tr key={cat}>
+                                <td className={`wt-category ${cat}`}>{labels[cat] || cat}</td>
+                                <td className="wt-value">{base.toFixed(3)}</td>
+                                <td className={`wt-value ${slChanged ? "changed" : ""}`}>
+                                  {sl.toFixed(3)}
+                                  {slChanged && (
+                                    <span className={`weight-delta ${sl > base ? "up" : "down"}`}>
+                                      {sl > base ? "+" : ""}{(sl - base).toFixed(3)}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className={`wt-value ${adaptChanged ? "changed" : ""}`}>
+                                  {adapt.toFixed(3)}
+                                  {adaptChanged && (
+                                    <span className={`weight-delta ${adapt > sl ? "up" : "down"}`}>
+                                      {adapt > sl ? "+" : ""}{(adapt - sl).toFixed(3)}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="wt-effective">
+                                  {eff.toFixed(3)}
+                                  {Math.abs(effDelta) > 0.005 && (
+                                    <span className={`weight-delta ${effDelta > 0 ? "up" : "down"}`}>
+                                      {effDelta > 0 ? "+" : ""}{effDelta.toFixed(3)} vs base
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+
+                      {weightLens.adaptive_steps?.length > 0 && (
+                        <div className="weight-lens-steps">
+                          <div className="weight-lens-steps-label">Adaptive context reasoning</div>
+                          {weightLens.adaptive_steps.map((step, i) => (
+                            <div key={i} className="weight-lens-step">
+                              <span className="wl-step-agent">{step.agent}</span>
+                              {step.detail}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div className="content-grid">
               <section className="priority-queue">

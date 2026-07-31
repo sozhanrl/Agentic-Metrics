@@ -1,17 +1,37 @@
+"""
+Recommendations Router
+
+The `generate` endpoint is the main entry point for the multi-agent pipeline.
+It now calls the Orchestrator (which chains Perceiver → AdaptiveWeighter →
+Evaluator → Negotiator → Explainer) instead of the old monolithic
+recommendation_engine.py. The old engine is preserved for reference but is
+no longer invoked.
+
+Backward compatibility
+----------------------
+The GET list endpoint continues to unpack the TRAIL_MARKER format so that
+existing recommendations persisted by the old engine are still readable.
+New recommendations from the multi-agent engine pack the trail the same way,
+so no migration is needed.
+"""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import crud, schemas
-from app.recommendation_engine import generate_recommendations
+from app.agents.orchestrator import run_pipeline, EnrichedRecommendation
 from app.ai_engine import narrate_recommendation, is_enabled as ai_enabled
 
 router = APIRouter(prefix="/recommendations", tags=["Recommendations"])
 
-# Explanation and reasoning trail are stored together in one TEXT column,
-# separated by this marker, so no schema change is needed to persist the
-# trail. The frontend splits on this marker to render them separately.
+# Explanation and reasoning trail stored in the same TEXT column, separated
+# by this marker. Frontend splits on it; old and new engines both use it.
 TRAIL_MARKER = "\n---REASONING_TRAIL---\n"
+
+# Separator between structured agent_trail JSON and the legacy reasoning trail
+# inside the same explanation field, for backward-compat storage.
+AGENT_TRAIL_MARKER = "\n---AGENT_TRAIL---\n"
 
 
 def _pack(explanation: str, trail: list[str]) -> str:
@@ -21,34 +41,54 @@ def _pack(explanation: str, trail: list[str]) -> str:
 def _unpack(stored: str) -> tuple[str, list[str]]:
     if TRAIL_MARKER in stored:
         explanation, trail_block = stored.split(TRAIL_MARKER, 1)
+        # Strip any agent_trail section that may have been appended
+        if AGENT_TRAIL_MARKER in trail_block:
+            trail_block = trail_block.split(AGENT_TRAIL_MARKER, 1)[0]
         return explanation, [line for line in trail_block.split("\n") if line]
     return stored, []
 
 
-def _to_response_with_trail(rec):
+def _to_response(rec, agent_trail=None, adaptive_weights=None,
+                 trend_slope=0.0, conflict_note=None) -> dict:
+    """
+    Build the enriched recommendation dict for API responses.
+    Works for both freshly-generated recs (where we pass extra context) and
+    for DB-loaded recs (where we only have the packed explanation string).
+    """
     explanation, trail = _unpack(rec.explanation)
     return {
-        "id": rec.id,
-        "project_id": rec.project_id,
-        "title": rec.title,
-        "explanation": explanation,
-        "reasoning_trail": trail,
-        "priority_score": float(rec.priority_score),
-        "related_metrics": rec.related_metrics,
-        "status": rec.status,
-        "created_at": rec.created_at,
-        "resolved_at": rec.resolved_at,
-        "ai_narrated": ai_enabled(),
+        "id":               rec.id,
+        "project_id":       rec.project_id,
+        "title":            rec.title,
+        "explanation":      explanation,
+        "reasoning_trail":  trail,
+        "agent_trail":      agent_trail or [],
+        "adaptive_weights": adaptive_weights,
+        "trend_slope":      trend_slope,
+        "conflict_note":    conflict_note,
+        "priority_score":   float(rec.priority_score),
+        "related_metrics":  rec.related_metrics,
+        "status":           rec.status,
+        "created_at":       rec.created_at,
+        "resolved_at":      rec.resolved_at,
+        "ai_narrated":      ai_enabled(),
     }
 
+
+# ---------------------------------------------------------------------------
+# Generate endpoint — runs the multi-agent pipeline
+# ---------------------------------------------------------------------------
 
 @router.post("/{project_id}/generate")
 def generate(project_id: int, db: Session = Depends(get_db)):
     """
-    Runs the agent pipeline: pulls latest metrics for the project,
-    evaluates and scores them, clears stale open recommendations, and
-    persists the new ranked list.
+    Run the full multi-agent pipeline for a project:
+      Perceiver → AdaptiveWeighter → Evaluator → Negotiator → Explainer
+
+    Clears stale 'open' recommendations, then persists and returns the new
+    enriched ranked list, including agent provenance trails and adaptive weights.
     """
+    # --- Fetch input data ---------------------------------------------------
     metric_rows = crud.get_latest_metric_values(db, project_id)
     if not metric_rows:
         raise HTTPException(
@@ -56,32 +96,91 @@ def generate(project_id: int, db: Session = Depends(get_db)):
             detail="No metric values found for this project. Record some metrics first.",
         )
 
-    scored = generate_recommendations(metric_rows)
+    # Build history map for trend detection: { metric_id → [MetricValue…] oldest-first }
+    history_map: dict[int, list] = {}
+    for _, definition in metric_rows:
+        history = crud.get_metric_history(db, project_id, definition.id, limit=10)
+        history_map[definition.id] = list(reversed(history))  # oldest → newest
+
+    # Load risk profile (None is safe — AdaptiveWeighter uses neutral defaults)
+    risk_profile = crud.get_risk_profile(db, project_id)
+
+    # Load the latest persisted weights for this project (or base defaults)
+    base_weights = crud.get_latest_weights(db, project_id)
+
+    # Pre-fetch empirically discovered dependency edges for the Negotiator.
+    # If no discovery run has been performed yet, this returns [] and the
+    # Negotiator degrades gracefully to static-conflict-only behaviour.
+    graph_edges = crud.get_latest_dependency_edges(db, project_id)
+
+    # --- Run the pipeline ---------------------------------------------------
+    enriched: list[EnrichedRecommendation] = run_pipeline(
+        metric_rows=metric_rows,
+        history_map=history_map,
+        risk_profile=risk_profile,
+        base_weights=base_weights,
+        graph_edges=graph_edges,
+    )
+
+    # --- Persist results ----------------------------------------------------
     crud.clear_open_recommendations(db, project_id)
 
     created = []
-    for rec in scored:
-        explanation = narrate_recommendation(rec.title, rec.explanation, rec.reasoning_trail)
-        stored_explanation = _pack(explanation, rec.reasoning_trail)
+    for rec in enriched:
+        # Optional LLM narration (ai_engine.py) rewrites the prose explanation.
+        narrated_explanation = narrate_recommendation(
+            rec.title, rec.explanation, rec.reasoning_trail
+        )
+        stored_explanation = _pack(narrated_explanation, rec.reasoning_trail)
+
         db_rec = crud.create_recommendation(
-            db, project_id=project_id, title=rec.title,
-            explanation=stored_explanation, priority_score=rec.priority_score,
+            db,
+            project_id=project_id,
+            title=rec.title,
+            explanation=stored_explanation,
+            priority_score=rec.priority_score,
             related_metrics=rec.related_metric_ids,
         )
-        created.append(_to_response_with_trail(db_rec))
+
+        created.append(
+            _to_response(
+                db_rec,
+                agent_trail=rec.agent_trail,
+                adaptive_weights=rec.adaptive_weights,
+                trend_slope=rec.trend_slope,
+                conflict_note=rec.conflict_note,
+            )
+        )
 
     return created
 
 
+# ---------------------------------------------------------------------------
+# List / read endpoints — backward compatible
+# ---------------------------------------------------------------------------
+
 @router.get("/{project_id}")
-def list_recommendations(project_id: int, status: str | None = None, db: Session = Depends(get_db)):
+def list_recommendations(
+    project_id: int,
+    status: str | None = None,
+    db: Session = Depends(get_db),
+):
+    """
+    List recommendations for a project, optionally filtered by status.
+    Returns the same enriched shape as the generate endpoint (agent_trail will
+    be empty for recommendations generated by the legacy engine).
+    """
     recs = crud.get_recommendations(db, project_id, status)
-    return [_to_response_with_trail(r) for r in recs]
+    return [_to_response(r) for r in recs]
 
 
 @router.patch("/{recommendation_id}/status")
-def update_status(recommendation_id: int, update: schemas.RecommendationStatusUpdate, db: Session = Depends(get_db)):
+def update_status(
+    recommendation_id: int,
+    update: schemas.RecommendationStatusUpdate,
+    db: Session = Depends(get_db),
+):
     rec = crud.update_recommendation_status(db, recommendation_id, update.status)
     if not rec:
         raise HTTPException(status_code=404, detail="Recommendation not found")
-    return _to_response_with_trail(rec)
+    return _to_response(rec)
