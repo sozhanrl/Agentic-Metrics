@@ -166,9 +166,62 @@ CREATE TABLE metric_weights (
     confidence      NUMERIC(5, 4) NOT NULL DEFAULT 0.0, -- 0.0 = uninformed, 1.0 = fully confident
     sample_count    NUMERIC(10, 4) NOT NULL DEFAULT 0.0, -- decay-weighted sample sum
     trend           VARCHAR(20) NOT NULL DEFAULT 'stable', -- 'increasing' | 'decreasing' | 'stable'
+    alpha           NUMERIC(10, 4) NOT NULL DEFAULT 5.0,
+    beta            NUMERIC(10, 4) NOT NULL DEFAULT 5.0,
+    alpha0          NUMERIC(10, 4) NOT NULL DEFAULT 5.0,
+    beta0           NUMERIC(10, 4) NOT NULL DEFAULT 5.0,
+    domain_context  VARCHAR(50),
     last_updated    TIMESTAMP NOT NULL DEFAULT NOW(),
     UNIQUE (project_id, metric_name)
 );
 
 CREATE INDEX idx_metric_weights_project ON metric_weights(project_id);
+
+
+-- ============================================================
+-- v4: Bayesian Engine, Causal Edges, Context Memory, Goal Constraints
+-- ============================================================
+CREATE TABLE causal_edges (
+    id                  BIGSERIAL PRIMARY KEY,
+    project_id          INTEGER NOT NULL REFERENCES projects(id),
+    source_metric       VARCHAR(100) NOT NULL,
+    target_metric       VARCHAR(100) NOT NULL,
+    edge_strength       NUMERIC(6, 4) NOT NULL DEFAULT 0.5,
+    causal_confidence   NUMERIC(6, 4) NOT NULL DEFAULT 0.0,
+    effect_type         VARCHAR(20) NOT NULL DEFAULT 'unknown',
+    evidence_type       VARCHAR(30) NOT NULL DEFAULT 'correlation',
+    competing_hypotheses INTEGER NOT NULL DEFAULT 0,
+    confirmations       INTEGER NOT NULL DEFAULT 0,
+    refutations         INTEGER NOT NULL DEFAULT 0,
+    is_active           BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at          TIMESTAMP DEFAULT NOW(),
+    last_validated_at   TIMESTAMP,
+    evolution_log       TEXT
+);
+CREATE INDEX idx_causal_edges_project ON causal_edges(project_id, is_active);
+
+CREATE TABLE context_memory (
+    id                  BIGSERIAL PRIMARY KEY,
+    context_key         VARCHAR(255) NOT NULL,
+    metric_name         VARCHAR(255) NOT NULL,
+    learned_alpha0      NUMERIC(10, 4) NOT NULL DEFAULT 5.0,
+    learned_beta0       NUMERIC(10, 4) NOT NULL DEFAULT 5.0,
+    predictiveness      NUMERIC(6, 4) NOT NULL DEFAULT 0.5,
+    outcome_correlation NUMERIC(6, 4),
+    project_count       INTEGER NOT NULL DEFAULT 0,
+    avg_outcome         NUMERIC(8, 4),
+    last_updated        TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX idx_context_memory_key ON context_memory(context_key, metric_name);
+
+CREATE TABLE goal_constraints (
+    id               BIGSERIAL PRIMARY KEY,
+    project_id       INTEGER NOT NULL REFERENCES projects(id),
+    constraint_type  VARCHAR(50) NOT NULL,
+    constraint_value NUMERIC(10, 4) NOT NULL,
+    is_active        BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at       TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX idx_goal_constraints_project ON goal_constraints(project_id, is_active);
+
 

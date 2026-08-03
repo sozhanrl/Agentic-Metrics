@@ -91,6 +91,11 @@ def trigger_self_learning(project_id: int, db: Session = Depends(get_db)):
             confidence=state["confidence"],
             sample_count=state["sample_count"],
             trend=state["trend"],
+            alpha=state.get("alpha"),
+            beta=state.get("beta"),
+            alpha0=state.get("alpha0"),
+            beta0=state.get("beta0"),
+            domain_context=state.get("domain_context"),
         )
         persisted_metrics.append(metric_name)
 
@@ -106,6 +111,7 @@ def trigger_self_learning(project_id: int, db: Session = Depends(get_db)):
         "feedback_summary":        feedback_summary,
         "metric_feedback_summary": metric_feedback_summary,
     }
+
 
 
 @router.get("/weight-history/{project_id}", response_model=list[schemas.WeightHistoryResponse])
@@ -377,3 +383,141 @@ def get_learning_validation(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Project not found")
 
     return crud.get_learning_validation_report(db, project_id)
+
+
+# ---------- Phase 2: Causal Graph Endpoints ----------
+
+@router.post("/evolve-graph/{project_id}")
+def evolve_graph(project_id: int, db: Session = Depends(get_db)):
+    """
+    Trigger the self-evolving causal graph engine to evaluate feedback and outcomes.
+    """
+    project = crud.get_project(db, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    from app.agents.evolving_graph import EvolvingCausalGraph
+    engine = EvolvingCausalGraph()
+
+    active_edges = crud.get_active_causal_edges(db, project_id)
+    retired = engine.validate_and_retire_edges(active_edges)
+
+    for edge in active_edges:
+        crud.upsert_causal_edge(
+            db=db,
+            project_id=project_id,
+            source_metric=edge.source_metric,
+            target_metric=edge.target_metric,
+            edge_strength=float(edge.edge_strength),
+            causal_confidence=float(edge.causal_confidence),
+            effect_type=edge.effect_type,
+            evidence_type=edge.evidence_type,
+            competing_hypotheses=edge.competing_hypotheses,
+            confirmations=edge.confirmations,
+            refutations=edge.refutations,
+            is_active=edge.is_active,
+            evolution_log=edge.evolution_log,
+        )
+
+    return {
+        "status": "ok",
+        "project_id": project_id,
+        "active_edges_count": len([e for e in active_edges if e.is_active]),
+        "retired_edges_count": len(retired),
+    }
+
+
+@router.get("/causal-graph/{project_id}", response_model=list[schemas.CausalEdgeResponse])
+def get_causal_graph(project_id: int, db: Session = Depends(get_db)):
+    """
+    Return active self-evolving causal graph edges for a project.
+    """
+    project = crud.get_project(db, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return crud.get_active_causal_edges(db, project_id)
+
+
+# ---------- Phase 3: Context Memory Endpoints ----------
+
+@router.get("/context-memory/{context_key}", response_model=list[schemas.ContextMemoryResponse])
+def get_context_memory(context_key: str, db: Session = Depends(get_db)):
+    """
+    Return learned priors and metric predictiveness for a given context archetype key.
+    """
+    return crud.get_context_memory_by_key(db, context_key)
+
+
+# ---------- Phase 4: Strategy Selection Endpoint ----------
+
+@router.get("/learning-strategy/{project_id}")
+def get_learning_strategy(project_id: int, db: Session = Depends(get_db)):
+    """
+    Returns the meta-learning strategy selected per metric for a project.
+    """
+    project = crud.get_project(db, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    from app.agents.strategy_selector import select_strategy
+    from app.agents.config import default_config
+
+    cfg = default_config()
+    weights = crud.get_metric_weights(db, project_id)
+    causal_edges = crud.get_active_causal_edges(db, project_id)
+
+    strategies = {}
+    for metric_name, state in weights.items():
+        incoming = [e for e in causal_edges if e.target_metric == metric_name]
+        strat, reason, bayes_w, graph_w = select_strategy(
+            metric_name=metric_name,
+            alpha=float(state.get("alpha", 5.0)),
+            beta=float(state.get("beta", 5.0)),
+            sample_count=float(state.get("sample_count", 0.0)),
+            predictiveness=0.5,
+            incoming_causal_edges=incoming,
+            cfg=cfg,
+        )
+        strategies[metric_name] = {
+            "strategy": strat.value,
+            "reason": reason,
+            "bayes_weight": bayes_w,
+            "graph_weight": graph_w,
+        }
+
+    return {
+        "project_id": project_id,
+        "strategies": strategies,
+    }
+
+
+# ---------- Phase 5: Goal Constraints Endpoints ----------
+
+@router.post("/goal-constraints/{project_id}", response_model=schemas.GoalConstraintResponse)
+def create_goal_constraint(
+    project_id: int,
+    constraint: schemas.GoalConstraintCreate,
+    db: Session = Depends(get_db),
+):
+    project = crud.get_project(db, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return crud.upsert_goal_constraint(
+        db=db,
+        project_id=project_id,
+        constraint_type=constraint.constraint_type,
+        constraint_value=constraint.constraint_value,
+        is_active=True,
+    )
+
+
+@router.get("/goal-constraints/{project_id}", response_model=list[schemas.GoalConstraintResponse])
+def get_goal_constraints(project_id: int, db: Session = Depends(get_db)):
+    project = crud.get_project(db, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return crud.get_active_goal_constraints(db, project_id)
+

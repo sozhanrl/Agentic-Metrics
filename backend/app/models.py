@@ -91,8 +91,9 @@ class ProjectRiskProfile(Base):
     tech_debt_index = Column(Numeric(4, 3), default=0.5)   # 0.0 (clean) – 1.0 (severe)
     risk_tolerance = Column(String(20), default="medium")  # low | medium | high
     deployment_env = Column(String(50), nullable=True)     # cloud | on-prem | hybrid
-    notes = Column(Text, nullable=True)
-    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+    domain         = Column(String(50), nullable=True)     # banking | healthcare | gaming | ecommerce | general
+    notes          = Column(Text, nullable=True)
+    updated_at     = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
 
 class CategoryWeightHistory(Base):
@@ -175,7 +176,78 @@ class MetricWeight(Base):
     trend        = Column(String(20), nullable=False, default="stable") # increasing|decreasing|stable
     last_updated = Column(TIMESTAMP, nullable=False, server_default=func.now(), onupdate=func.now())
 
+    alpha          = Column(Numeric(10, 4), nullable=False, default=5.0)
+    beta           = Column(Numeric(10, 4), nullable=False, default=5.0)
+    alpha0         = Column(Numeric(10, 4), nullable=False, default=5.0)
+    beta0          = Column(Numeric(10, 4), nullable=False, default=5.0)
+    domain_context = Column(String(50), nullable=True)
+
     __table_args__ = (
         Index("idx_metric_weights_project", "project_id"),
         {"extend_existing": True},
     )
+
+
+class CausalEdge(Base):
+    """Self-evolving causal dependency edge with confidence and evidence tracking."""
+    __tablename__ = "causal_edges"
+
+    id                  = Column(BigInteger, primary_key=True, index=True)
+    project_id          = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    source_metric       = Column(String(100), nullable=False)
+    target_metric       = Column(String(100), nullable=False)
+    edge_strength       = Column(Numeric(6, 4), nullable=False, default=0.5)
+    causal_confidence   = Column(Numeric(6, 4), nullable=False, default=0.0)
+    effect_type         = Column(String(20), nullable=False, default="unknown") # 'direct' | 'indirect' | 'unknown'
+    evidence_type       = Column(String(30), nullable=False, default="correlation") # 'correlation' | 'intervention' | 'temporal_precedence' | 'competing_rejected'
+    competing_hypotheses = Column(Integer, nullable=False, default=0)
+    confirmations       = Column(Integer, nullable=False, default=0)
+    refutations         = Column(Integer, nullable=False, default=0)
+    is_active           = Column(Boolean, nullable=False, default=True)
+    created_at          = Column(TIMESTAMP, server_default=func.now())
+    last_validated_at   = Column(TIMESTAMP, nullable=True)
+    evolution_log       = Column(Text, nullable=True)
+
+    __table_args__ = (
+        Index("idx_causal_edges_project", "project_id", "is_active"),
+        {"extend_existing": True},
+    )
+
+
+class ContextMemory(Base):
+    """Learned priors and metric predictiveness from historical project outcomes."""
+    __tablename__ = "context_memory"
+
+    id                  = Column(BigInteger, primary_key=True, index=True)
+    context_key         = Column(String(255), nullable=False)
+    metric_name         = Column(String(255), nullable=False)
+    learned_alpha0      = Column(Numeric(10, 4), nullable=False, default=5.0)
+    learned_beta0       = Column(Numeric(10, 4), nullable=False, default=5.0)
+    predictiveness      = Column(Numeric(6, 4), nullable=False, default=0.5)
+    outcome_correlation = Column(Numeric(6, 4), nullable=True)
+    project_count       = Column(Integer, nullable=False, default=0)
+    avg_outcome         = Column(Numeric(8, 4), nullable=True)
+    last_updated        = Column(TIMESTAMP, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_context_memory_key", "context_key", "metric_name"),
+        {"extend_existing": True},
+    )
+
+
+class GoalConstraint(Base):
+    """User-defined optimization constraints per project."""
+    __tablename__ = "goal_constraints"
+
+    id               = Column(BigInteger, primary_key=True, index=True)
+    project_id       = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    constraint_type  = Column(String(50), nullable=False)  # risk_budget | cost_limit | time_limit
+    constraint_value = Column(Numeric(10, 4), nullable=False)
+    is_active        = Column(Boolean, nullable=False, default=True)
+    created_at       = Column(TIMESTAMP, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_goal_constraints_project", "project_id", "is_active"),
+        {"extend_existing": True},
+    )
+

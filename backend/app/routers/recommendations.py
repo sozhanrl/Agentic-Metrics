@@ -49,7 +49,9 @@ def _unpack(stored: str) -> tuple[str, list[str]]:
 
 
 def _to_response(rec, agent_trail=None, adaptive_weights=None,
-                 trend_slope=0.0, conflict_note=None) -> dict:
+                 trend_slope=0.0, conflict_note=None,
+                 detected_domain=None, confidence_score=0.0,
+                 confidence_label="low", confidence_evidence=None) -> dict:
     """
     Build the enriched recommendation dict for API responses.
     Works for both freshly-generated recs (where we pass extra context) and
@@ -57,21 +59,25 @@ def _to_response(rec, agent_trail=None, adaptive_weights=None,
     """
     explanation, trail = _unpack(rec.explanation)
     return {
-        "id":               rec.id,
-        "project_id":       rec.project_id,
-        "title":            rec.title,
-        "explanation":      explanation,
-        "reasoning_trail":  trail,
-        "agent_trail":      agent_trail or [],
-        "adaptive_weights": adaptive_weights,
-        "trend_slope":      trend_slope,
-        "conflict_note":    conflict_note,
-        "priority_score":   float(rec.priority_score),
-        "related_metrics":  rec.related_metrics,
-        "status":           rec.status,
-        "created_at":       rec.created_at,
-        "resolved_at":      rec.resolved_at,
-        "ai_narrated":      ai_enabled(),
+        "id":                  rec.id,
+        "project_id":          rec.project_id,
+        "title":               rec.title,
+        "explanation":         explanation,
+        "reasoning_trail":     trail,
+        "agent_trail":         agent_trail or [],
+        "adaptive_weights":    adaptive_weights,
+        "trend_slope":         trend_slope,
+        "conflict_note":       conflict_note,
+        "detected_domain":     detected_domain,
+        "confidence_score":    confidence_score,
+        "confidence_label":    confidence_label,
+        "confidence_evidence": confidence_evidence or [],
+        "priority_score":      float(rec.priority_score),
+        "related_metrics":     rec.related_metrics,
+        "status":              rec.status,
+        "created_at":          rec.created_at,
+        "resolved_at":         rec.resolved_at,
+        "ai_narrated":         ai_enabled(),
     }
 
 
@@ -83,7 +89,7 @@ def _to_response(rec, agent_trail=None, adaptive_weights=None,
 def generate(project_id: int, db: Session = Depends(get_db)):
     """
     Run the full multi-agent pipeline for a project:
-      Perceiver → AdaptiveWeighter → Evaluator → Negotiator → Explainer
+      Perceiver → AdaptiveWeighter → ContextDetector → Evaluator → Negotiator → Explainer → ConfidenceEstimator
 
     Clears stale 'open' recommendations, then persists and returns the new
     enriched ranked list, including agent provenance trails and adaptive weights.
@@ -102,16 +108,21 @@ def generate(project_id: int, db: Session = Depends(get_db)):
         history = crud.get_metric_history(db, project_id, definition.id, limit=10)
         history_map[definition.id] = list(reversed(history))  # oldest → newest
 
+    # Fetch Project row
+    project = crud.get_project(db, project_id)
+
     # Load risk profile (None is safe — AdaptiveWeighter uses neutral defaults)
     risk_profile = crud.get_risk_profile(db, project_id)
 
     # Load the latest persisted weights for this project (or base defaults)
     base_weights = crud.get_latest_weights(db, project_id)
 
-    # Pre-fetch empirically discovered dependency edges for the Negotiator.
-    # If no discovery run has been performed yet, this returns [] and the
-    # Negotiator degrades gracefully to static-conflict-only behaviour.
+    # Pre-fetch feedback sample counts per category for ConfidenceEstimator
+    weight_sample_sizes = crud.get_weight_sample_sizes(db, project_id)
+
+    # Pre-fetch empirically discovered dependency edges for Negotiator and ConfidenceEstimator
     graph_edges = crud.get_latest_dependency_edges(db, project_id)
+    dependency_edges = {e.target_metric_key: e for e in graph_edges}
 
     # --- Run the pipeline ---------------------------------------------------
     enriched: list[EnrichedRecommendation] = run_pipeline(
@@ -120,6 +131,9 @@ def generate(project_id: int, db: Session = Depends(get_db)):
         risk_profile=risk_profile,
         base_weights=base_weights,
         graph_edges=graph_edges,
+        project=project,
+        weight_sample_sizes=weight_sample_sizes,
+        dependency_edges=dependency_edges,
     )
 
     # --- Persist results ----------------------------------------------------
@@ -149,6 +163,10 @@ def generate(project_id: int, db: Session = Depends(get_db)):
                 adaptive_weights=rec.adaptive_weights,
                 trend_slope=rec.trend_slope,
                 conflict_note=rec.conflict_note,
+                detected_domain=rec.detected_domain,
+                confidence_score=rec.confidence_score,
+                confidence_label=rec.confidence_label,
+                confidence_evidence=rec.confidence_evidence,
             )
         )
 

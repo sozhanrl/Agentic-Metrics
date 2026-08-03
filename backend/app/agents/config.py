@@ -92,7 +92,7 @@ SMALL_TEAM_PROCESS_FACTOR: float = 0.75
 SMALL_TEAM_THRESHOLD: int = 5
 
 # ---------------------------------------------------------------------------
-# Self-learning Bayesian nudge parameters
+# Self-learning Bayesian nudge & Beta-Bernoulli parameters
 # ---------------------------------------------------------------------------
 
 # How strongly feedback moves the needle per update cycle (learning rate).
@@ -120,6 +120,29 @@ FEEDBACK_DECAY_HALF_LIFE_DAYS: float = 60.0
 #   factor = 0.5 ** (1 / HALF_LIFE_DAYS)
 # This constant is the DEFAULT; projects may store a custom factor in the DB.
 DEFAULT_DECAY_FACTOR: float = 0.5 ** (1 / 60.0)  # ≈ 0.9885 per day
+
+# --- Bayesian Beta-Bernoulli parameters ---
+PRIOR_STRENGTH: float = 10.0
+REGULARIZATION_RATE: float = 0.05
+TIME_DECAY_LAMBDA: float = 0.01
+
+# --- Self-Evolving Causal Graph parameters ---
+EDGE_STRENGTHEN_RATE: float = 0.1
+EDGE_WEAKEN_RATE: float = 0.15
+EDGE_CREATION_THRESHOLD: float = 0.6
+EDGE_REMOVAL_THRESHOLD: float = 0.15
+GRAPH_PROPAGATION_DECAY: float = 0.5
+CAUSAL_VALIDATION_WINDOW_DAYS: int = 90
+CAUSAL_MIN_OBSERVATIONS: int = 5
+INDIRECT_EFFECT_DECAY: float = 0.6
+
+# --- Adaptive Strategy Selection parameters ---
+STRATEGY_VARIANCE_THRESHOLD: float = 0.08
+STRATEGY_GRAPH_CONFIDENCE_THRESHOLD: float = 0.6
+
+# --- Context Memory Engine parameters ---
+CONTEXT_MEMORY_MIN_PROJECTS: int = 3
+PREDICTIVENESS_DECAY: float = 0.95
 
 # ---------------------------------------------------------------------------
 # Negotiator — graph-discount for empirically discovered causal edges
@@ -179,8 +202,28 @@ class AgentConfig:
     graph_discount: float               = GRAPH_DISCOUNT
     # Maximum combined penalty cap (graph + conflict) per recommendation.
     max_total_penalty: float            = MAX_TOTAL_PENALTY
+    # Bayesian Beta-Bernoulli
+    prior_strength: float               = PRIOR_STRENGTH
+    regularization_rate: float          = REGULARIZATION_RATE
+    time_decay_lambda: float            = TIME_DECAY_LAMBDA
+    # Self-Evolving Causal Graph
+    edge_strengthen_rate: float         = EDGE_STRENGTHEN_RATE
+    edge_weaken_rate: float             = EDGE_WEAKEN_RATE
+    edge_creation_threshold: float      = EDGE_CREATION_THRESHOLD
+    edge_removal_threshold: float       = EDGE_REMOVAL_THRESHOLD
+    graph_propagation_decay: float      = GRAPH_PROPAGATION_DECAY
+    causal_validation_window_days: int  = CAUSAL_VALIDATION_WINDOW_DAYS
+    causal_min_observations: int        = CAUSAL_MIN_OBSERVATIONS
+    indirect_effect_decay: float        = INDIRECT_EFFECT_DECAY
+    # Adaptive Strategy Selection
+    strategy_variance_threshold: float  = STRATEGY_VARIANCE_THRESHOLD
+    strategy_graph_confidence_threshold: float = STRATEGY_GRAPH_CONFIDENCE_THRESHOLD
+    # Context Memory Engine
+    context_memory_min_projects: int    = CONTEXT_MEMORY_MIN_PROJECTS
+    predictiveness_decay: float         = PREDICTIVENESS_DECAY
 
 
 def default_config() -> AgentConfig:
     """Returns a fresh AgentConfig with all module-level defaults."""
     return AgentConfig()
+

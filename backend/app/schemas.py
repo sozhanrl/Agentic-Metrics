@@ -254,6 +254,10 @@ class EnrichedRecommendationResponse(BaseModel):
     adaptive_weights: Optional[dict] = None   # weights used in this pipeline run
     trend_slope: Optional[float] = None       # metric trend slope (+ = worsening)
     conflict_note: Optional[str] = None       # set by Negotiator when a penalty was applied
+    detected_domain: Optional[str] = None     # banking | healthcare | gaming | ecommerce | general
+    confidence_score: float = 0.0             # 0.0 to 1.0 confidence score
+    confidence_label: str = "low"             # high | medium | low
+    confidence_evidence: List[str] = []       # evidence breakdown list
     ai_narrated: bool = False
 
     class Config:
@@ -284,5 +288,72 @@ class DependencyDiscoveryResponse(BaseModel):
     edges_discovered: int
     edges: List[DependencyEdgeResponse]
     summary: str
+
+
+# ---------- Bayesian & Causal Graph Schemas ----------
+
+class BayesianWeightState(BaseModel):
+    weight: float
+    confidence: float
+    sample_count: float
+    trend: str
+    alpha: float
+    beta: float
+    alpha0: float
+    beta0: float
+    domain_context: Optional[str] = None
+
+
+class CausalEdgeResponse(BaseModel):
+    id: Optional[int] = None
+    project_id: int
+    source_metric: str
+    target_metric: str
+    edge_strength: float
+    causal_confidence: float
+    effect_type: str
+    evidence_type: str
+    competing_hypotheses: int = 0
+    confirmations: int = 0
+    refutations: int = 0
+    is_active: bool = True
+    created_at: Optional[datetime] = None
+    last_validated_at: Optional[datetime] = None
+    evolution_log: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ContextMemoryResponse(BaseModel):
+    id: Optional[int] = None
+    context_key: str
+    metric_name: str
+    learned_alpha0: float
+    learned_beta0: float
+    predictiveness: float
+    outcome_correlation: Optional[float] = None
+    project_count: int
+    avg_outcome: Optional[float] = None
+    last_updated: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class GoalConstraintCreate(BaseModel):
+    constraint_type: str  # risk_budget | cost_limit | time_limit
+    constraint_value: float
+
+
+class GoalConstraintResponse(GoalConstraintCreate):
+    id: int
+    project_id: int
+    is_active: bool
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
 
 

@@ -339,6 +339,16 @@ def get_feedback_summary(
     return summary
 
 
+def get_weight_sample_sizes(db: Session, project_id: int) -> dict[str, float]:
+    """
+    Return total feedback sample count (decay-weighted) grouped by category.
+    Reuses the feedback summary aggregation from get_feedback_summary.
+    """
+    summary = get_feedback_summary(db, project_id)
+    return {cat: data.get("total_w", 0.0) for cat, data in summary.items()}
+
+
+
 def get_feedback_summary_by_metric(
     db: Session,
     project_id: int,
@@ -404,6 +414,11 @@ def upsert_metric_weight(
     confidence: float,
     sample_count: float,
     trend: str,
+    alpha: float | None = None,
+    beta: float | None = None,
+    alpha0: float | None = None,
+    beta0: float | None = None,
+    domain_context: str | None = None,
 ) -> "models.MetricWeight":
     """
     Insert or update the per-metric learning state for one (project, metric) pair.
@@ -426,6 +441,16 @@ def upsert_metric_weight(
         existing.confidence   = round(min(1.0, max(0.0, confidence)), 4)
         existing.sample_count = round(sample_count, 4)
         existing.trend        = trend
+        if alpha is not None:
+            existing.alpha    = round(alpha, 4)
+        if beta is not None:
+            existing.beta     = round(beta, 4)
+        if alpha0 is not None:
+            existing.alpha0   = round(alpha0, 4)
+        if beta0 is not None:
+            existing.beta0    = round(beta0, 4)
+        if domain_context is not None:
+            existing.domain_context = domain_context
         existing.last_updated = datetime.now(timezone.utc)
         db.commit()
         db.refresh(existing)
@@ -438,6 +463,11 @@ def upsert_metric_weight(
         confidence   = round(min(1.0, max(0.0, confidence)), 4),
         sample_count = round(sample_count, 4),
         trend        = trend,
+        alpha        = round(alpha if alpha is not None else 5.0, 4),
+        beta         = round(beta if beta is not None else 5.0, 4),
+        alpha0       = round(alpha0 if alpha0 is not None else 5.0, 4),
+        beta0        = round(beta0 if beta0 is not None else 5.0, 4),
+        domain_context = domain_context,
     )
     db.add(row)
     db.commit()
@@ -450,7 +480,9 @@ def get_metric_weights(db: Session, project_id: int) -> dict[str, dict]:
     Return current per-metric learning state as a dict keyed by metric_name.
 
     { metric_name: { "weight": float, "confidence": float,
-                     "sample_count": float, "trend": str } }
+                     "sample_count": float, "trend": str,
+                     "alpha": float, "beta": float,
+                     "alpha0": float, "beta0": float, "domain_context": str } }
     """
     rows = (
         db.query(models.MetricWeight)
@@ -459,13 +491,206 @@ def get_metric_weights(db: Session, project_id: int) -> dict[str, dict]:
     )
     return {
         r.metric_name: {
-            "weight":       float(r.weight),
-            "confidence":   float(r.confidence),
-            "sample_count": float(r.sample_count),
-            "trend":        r.trend,
+            "weight":         float(r.weight),
+            "confidence":     float(r.confidence),
+            "sample_count":   float(r.sample_count),
+            "trend":          r.trend,
+            "alpha":          float(r.alpha) if r.alpha is not None else 5.0,
+            "beta":           float(r.beta) if r.beta is not None else 5.0,
+            "alpha0":         float(r.alpha0) if r.alpha0 is not None else 5.0,
+            "beta0":          float(r.beta0) if r.beta0 is not None else 5.0,
+            "domain_context": r.domain_context,
         }
         for r in rows
     }
+
+
+# ---------- Causal Edges (Self-Evolving Graph) ----------
+
+def upsert_causal_edge(
+    db: Session,
+    project_id: int,
+    source_metric: str,
+    target_metric: str,
+    edge_strength: float,
+    causal_confidence: float = 0.0,
+    effect_type: str = "unknown",
+    evidence_type: str = "correlation",
+    competing_hypotheses: int = 0,
+    confirmations: int = 0,
+    refutations: int = 0,
+    is_active: bool = True,
+    evolution_log: str | None = None,
+) -> models.CausalEdge:
+    from datetime import datetime, timezone
+
+    existing = (
+        db.query(models.CausalEdge)
+        .filter(
+            models.CausalEdge.project_id == project_id,
+            models.CausalEdge.source_metric == source_metric,
+            models.CausalEdge.target_metric == target_metric,
+        )
+        .first()
+    )
+
+    if existing:
+        existing.edge_strength       = round(edge_strength, 4)
+        existing.causal_confidence   = round(causal_confidence, 4)
+        existing.effect_type         = effect_type
+        existing.evidence_type       = evidence_type
+        existing.competing_hypotheses = competing_hypotheses
+        existing.confirmations       = confirmations
+        existing.refutations         = refutations
+        existing.is_active           = is_active
+        existing.last_validated_at   = datetime.now(timezone.utc)
+        if evolution_log:
+            existing.evolution_log   = (existing.evolution_log or "") + "\n" + evolution_log
+        db.commit()
+        db.refresh(existing)
+        return existing
+
+    row = models.CausalEdge(
+        project_id          = project_id,
+        source_metric       = source_metric,
+        target_metric       = target_metric,
+        edge_strength       = round(edge_strength, 4),
+        causal_confidence   = round(causal_confidence, 4),
+        effect_type         = effect_type,
+        evidence_type       = evidence_type,
+        competing_hypotheses = competing_hypotheses,
+        confirmations       = confirmations,
+        refutations         = refutations,
+        is_active           = is_active,
+        evolution_log       = evolution_log,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+def get_active_causal_edges(db: Session, project_id: int) -> list[models.CausalEdge]:
+    return (
+        db.query(models.CausalEdge)
+        .filter(
+            models.CausalEdge.project_id == project_id,
+            models.CausalEdge.is_active == True,
+        )
+        .order_by(desc(models.CausalEdge.edge_strength))
+        .all()
+    )
+
+
+# ---------- Context Memory ----------
+
+def upsert_context_memory(
+    db: Session,
+    context_key: str,
+    metric_name: str,
+    learned_alpha0: float,
+    learned_beta0: float,
+    predictiveness: float = 0.5,
+    outcome_correlation: float | None = None,
+    project_count: int = 1,
+    avg_outcome: float | None = None,
+) -> models.ContextMemory:
+    from datetime import datetime, timezone
+
+    existing = (
+        db.query(models.ContextMemory)
+        .filter(
+            models.ContextMemory.context_key == context_key,
+            models.ContextMemory.metric_name == metric_name,
+        )
+        .first()
+    )
+
+    if existing:
+        existing.learned_alpha0      = round(learned_alpha0, 4)
+        existing.learned_beta0       = round(learned_beta0, 4)
+        existing.predictiveness      = round(predictiveness, 4)
+        if outcome_correlation is not None:
+            existing.outcome_correlation = round(outcome_correlation, 4)
+        existing.project_count       = project_count
+        if avg_outcome is not None:
+            existing.avg_outcome     = round(avg_outcome, 4)
+        existing.last_updated        = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(existing)
+        return existing
+
+    row = models.ContextMemory(
+        context_key         = context_key,
+        metric_name         = metric_name,
+        learned_alpha0      = round(learned_alpha0, 4),
+        learned_beta0       = round(learned_beta0, 4),
+        predictiveness      = round(predictiveness, 4),
+        outcome_correlation = round(outcome_correlation, 4) if outcome_correlation is not None else None,
+        project_count       = project_count,
+        avg_outcome         = round(avg_outcome, 4) if avg_outcome is not None else None,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+def get_context_memory_by_key(db: Session, context_key: str) -> list[models.ContextMemory]:
+    return (
+        db.query(models.ContextMemory)
+        .filter(models.ContextMemory.context_key == context_key)
+        .all()
+    )
+
+
+# ---------- Goal Constraints ----------
+
+def upsert_goal_constraint(
+    db: Session,
+    project_id: int,
+    constraint_type: str,
+    constraint_value: float,
+    is_active: bool = True,
+) -> models.GoalConstraint:
+    existing = (
+        db.query(models.GoalConstraint)
+        .filter(
+            models.GoalConstraint.project_id == project_id,
+            models.GoalConstraint.constraint_type == constraint_type,
+        )
+        .first()
+    )
+
+    if existing:
+        existing.constraint_value = round(constraint_value, 4)
+        existing.is_active        = is_active
+        db.commit()
+        db.refresh(existing)
+        return existing
+
+    row = models.GoalConstraint(
+        project_id       = project_id,
+        constraint_type  = constraint_type,
+        constraint_value = round(constraint_value, 4),
+        is_active        = is_active,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+def get_active_goal_constraints(db: Session, project_id: int) -> list[models.GoalConstraint]:
+    return (
+        db.query(models.GoalConstraint)
+        .filter(
+            models.GoalConstraint.project_id == project_id,
+            models.GoalConstraint.is_active == True,
+        )
+        .all()
+    )
+
 
 
 # ---------- Learning Validation (P3 — Prove learning works) ----------
