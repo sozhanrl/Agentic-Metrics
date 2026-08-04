@@ -67,6 +67,9 @@ def run_pipeline(
     project: Any = None,
     weight_sample_sizes: dict | None = None,
     dependency_edges: dict | None = None,
+    metric_learning_weights: dict | None = None,
+    causal_edges: list | None = None,
+    context_memories: list | None = None,
     cfg: AgentConfig | None = None,
 ) -> list[EnrichedRecommendation]:
     """
@@ -74,30 +77,34 @@ def run_pipeline(
 
     Parameters
     ----------
-    metric_rows        : list of (MetricValue, MetricDefinition) tuples —
-                         the latest value per metric (from crud.get_latest_metric_values)
-    history_map        : { metric_id: [MetricValue, …] } oldest-first per metric.
-                         Used by the Perceiver for trend detection.
-    risk_profile       : ProjectRiskProfile ORM object or None.
-                         Used by AdaptiveWeighter and ContextDetector.
-    base_weights       : Starting weights dict (from crud.get_latest_weights or defaults).
-                         If None, falls back to BASE_CATEGORY_WEIGHTS from config.
-    graph_edges        : list of MetricDependencyGraph ORM objects (or None).
-                         Pre-fetched by caller for Negotiator graph-discount.
-    project            : Project ORM object or dict (or None). Used by ContextDetector.
-    weight_sample_sizes: dict of {category: sample_count} (or None). Used by ConfidenceEstimator.
-    dependency_edges   : dict of {target_metric_key: edge_obj} (or None). Used by ConfidenceEstimator.
-    cfg                : AgentConfig. Defaults to module-level defaults if omitted.
+    metric_rows             : list of (MetricValue, MetricDefinition) tuples
+    history_map             : { metric_id: [MetricValue, …] } oldest-first per metric.
+    risk_profile            : ProjectRiskProfile ORM object or None.
+    base_weights            : Starting weights dict.
+    graph_edges             : list of MetricDependencyGraph ORM objects (or None).
+    project                 : Project ORM object or dict (or None).
+    weight_sample_sizes     : dict of {category: sample_count} (or None).
+    dependency_edges        : dict of {target_metric_key: edge_obj} (or None).
+    metric_learning_weights : dict of per-metric Bayesian learning state (alpha, beta, sample_count).
+    causal_edges            : list of active CausalEdge objects for self-evolving graph arbitration.
+    context_memories        : list of ContextMemory objects for archetype predictiveness.
+    cfg                     : AgentConfig. Defaults to module-level defaults if omitted.
 
     Returns
     -------
     list[EnrichedRecommendation] sorted highest priority_score first.
     """
     from app.agents.config import BASE_CATEGORY_WEIGHTS
+    from app.agents.strategy_selector import select_strategy
+    from app.agents.context_memory_engine import ContextMemoryEngine
 
-    cfg          = cfg or default_config()
-    history_map  = history_map or {}
-    base_weights = base_weights or dict(BASE_CATEGORY_WEIGHTS)
+    cfg                     = cfg or default_config()
+    history_map             = history_map or {}
+    base_weights            = base_weights or dict(BASE_CATEGORY_WEIGHTS)
+    metric_learning_weights = metric_learning_weights or {}
+    causal_edges            = causal_edges or []
+    context_memories        = context_memories or []
+    ctx_engine              = ContextMemoryEngine(cfg=cfg)
 
     # -----------------------------------------------------------------------
     # Step 1 — Perceiver
@@ -108,6 +115,59 @@ def run_pipeline(
     signals_map: dict[str, MetricSignal] = {s.key: s for s in signals}
 
     # -----------------------------------------------------------------------
+    # Step 1b — StrategySelector (Evidence-Adaptive Arbitration per metric)
+    # -----------------------------------------------------------------------
+    strategy_map: dict[str, dict] = {}
+    for signal in signals:
+        m_name = signal.key
+        m_state = metric_learning_weights.get(m_name, {})
+        alpha_val = float(m_state.get("alpha", 5.0))
+        beta_val = float(m_state.get("beta", 5.0))
+        samples = float(m_state.get("sample_count", 0.0))
+
+        _, _, pred = ctx_engine.get_learned_priors(
+            context_memories=context_memories,
+            metric_name=m_name,
+            fallback_alpha0=alpha_val,
+            fallback_beta0=beta_val,
+        )
+
+        incoming = [
+            e for e in causal_edges
+            if (getattr(e, "target_metric", None) or (e.get("target_metric") if isinstance(e, dict) else None)) == m_name
+        ]
+
+        strat, reason, bayes_w, graph_w = select_strategy(
+            metric_name=m_name,
+            alpha=alpha_val,
+            beta=beta_val,
+            sample_count=samples,
+            predictiveness=pred,
+            incoming_causal_edges=incoming,
+            cfg=cfg,
+        )
+
+        baseline_bayes_w, baseline_graph_w = 0.5, 0.5
+        bayes_delta = round(bayes_w - baseline_bayes_w, 3)
+
+        strategy_map[m_name] = {
+            "strategy": strat.value,
+            "reason": reason,
+            "bayes_weight_factor": bayes_w,
+            "graph_weight_factor": graph_w,
+            "baseline_bayes_w": baseline_bayes_w,
+            "bayes_delta_vs_baseline": bayes_delta,
+            "predictiveness": pred,
+            "sample_count": samples,
+        }
+
+        signal.agent_steps.append({
+            "agent": "StrategySelector",
+            "action": f"strategy={strat.value} (bayes_w={bayes_w:.2f}, graph_w={graph_w:.2f})",
+            "detail": f"Arbitration for {m_name}: {reason}. [Baseline 50/50 blend delta={bayes_delta:+.2f}]",
+        })
+
+    # -----------------------------------------------------------------------
     # Step 2 — AdaptiveWeighter
     # -----------------------------------------------------------------------
     adaptive_weights, weighter_steps = compute_adaptive_weights(
@@ -115,6 +175,19 @@ def run_pipeline(
         risk_profile=risk_profile,
         cfg=cfg,
     )
+
+    # Apply per-metric weight multiplier scaled by StrategySelector factors
+    for signal in signals:
+        m_name = signal.key
+        if m_name in metric_learning_weights and m_name in strategy_map:
+            m_weight = float(metric_learning_weights[m_name].get("weight", 1.0))
+            strat_info = strategy_map[m_name]
+            bayes_factor = strat_info["bayes_weight_factor"]
+            # Apply arbitrated Bayesian component vs raw weight
+            effective_metric_mult = 1.0 + (m_weight - 1.0) * bayes_factor
+            # Modulate adaptive category weight for this metric signal
+            if signal.category in adaptive_weights:
+                signal.weight_override = round(adaptive_weights[signal.category] * effective_metric_mult, 4)
 
     # -----------------------------------------------------------------------
     # Step 2b — ContextDetector (Domain Overlay)

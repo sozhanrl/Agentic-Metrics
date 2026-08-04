@@ -45,9 +45,33 @@ npm run dev
 ```
 Visit the URL it prints (usually http://localhost:5173).
 
+## Patentable Core Invention: Evidence-Adaptive Arbitration Mechanism
+
+This project implements **Evidence-Adaptive Arbitration between Direct Feedback and Causal-Graph-Propagated Learning**, a closed-loop multi-agent mechanism for software metrics prioritization:
+
+- **Per-Metric Meta-Learning Strategy Selector** (`app/agents/strategy_selector.py`): Dynamically arbitrates between `pure_bayesian`, `graph_propagated`, and variance-weighted `hybrid` learning strategies based on sample count, posterior variance, metric predictiveness, and incoming causal edge confidence.
+- **Self-Evolving Causal Knowledge Graph** (`app/agents/evolving_graph.py`): Automatically strengthens confirmed causal edges and retires refuted edges when their strength drops below the removal threshold.
+- **Context Memory Engine** (`app/agents/context_memory_engine.py`): Learns metric predictiveness and Bayesian priors per project archetype.
+- **Full Specification & Section 3(k) Framing**: See [`PATENT_MECHANISM.md`](file:///p:/Metric%20project/metrics-agent/PATENT_MECHANISM.md).
+
+### Verification & Reproduction
+
+Run unit test suites:
+```powershell
+cd backend
+.\venv\Scripts\python.exe -m pytest tests/ -v
+```
+
+Run multi-cycle synthetic scenario demonstration artifact:
+```powershell
+cd backend
+.\venv\Scripts\python.exe demo_patent_mechanism.py
+```
+
 ## First run walkthrough
 1. Start the backend, then the frontend
 2. In the UI, click **"+ New project"**, fill in a name/source, create it
 3. Click **"Seed demo data"** — this populates realistic metric values
 4. Click **"Run agent"** — this triggers the prioritization engine and populates the priority queue
 5. Click any recommendation card to expand its **reasoning trail** and see exactly which metric inputs drove that priority score
+

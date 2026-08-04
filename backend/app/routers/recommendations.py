@@ -124,6 +124,13 @@ def generate(project_id: int, db: Session = Depends(get_db)):
     graph_edges = crud.get_latest_dependency_edges(db, project_id)
     dependency_edges = {e.target_metric_key: e for e in graph_edges}
 
+    # Pre-fetch evidence-adaptive arbitration inputs (Phase 4 Patent Mechanism)
+    metric_learning_weights = crud.get_metric_weights(db, project_id)
+    causal_edges = crud.get_active_causal_edges(db, project_id)
+    from app.agents.context_memory_engine import build_context_key
+    ctx_key = build_context_key(project, risk_profile)
+    context_memories = crud.get_context_memory_by_key(db, ctx_key)
+
     # --- Run the pipeline ---------------------------------------------------
     enriched: list[EnrichedRecommendation] = run_pipeline(
         metric_rows=metric_rows,
@@ -134,6 +141,9 @@ def generate(project_id: int, db: Session = Depends(get_db)):
         project=project,
         weight_sample_sizes=weight_sample_sizes,
         dependency_edges=dependency_edges,
+        metric_learning_weights=metric_learning_weights,
+        causal_edges=causal_edges,
+        context_memories=context_memories,
     )
 
     # --- Persist results ----------------------------------------------------

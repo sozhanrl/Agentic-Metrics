@@ -461,21 +461,37 @@ def get_learning_strategy(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Project not found")
 
     from app.agents.strategy_selector import select_strategy
+    from app.agents.context_memory_engine import ContextMemoryEngine, build_context_key
     from app.agents.config import default_config
 
     cfg = default_config()
     weights = crud.get_metric_weights(db, project_id)
     causal_edges = crud.get_active_causal_edges(db, project_id)
+    risk_profile = crud.get_risk_profile(db, project_id)
+
+    ctx_key = build_context_key(project, risk_profile)
+    context_memories = crud.get_context_memory_by_key(db, ctx_key)
+    ctx_engine = ContextMemoryEngine(cfg=cfg)
 
     strategies = {}
     for metric_name, state in weights.items():
-        incoming = [e for e in causal_edges if e.target_metric == metric_name]
+        incoming = [e for e in causal_edges if (getattr(e, "target_metric", None) or (e.get("target_metric") if isinstance(e, dict) else None)) == metric_name]
+
+        alpha_val = float(state.get("alpha", 5.0))
+        beta_val = float(state.get("beta", 5.0))
+        _, _, pred = ctx_engine.get_learned_priors(
+            context_memories=context_memories,
+            metric_name=metric_name,
+            fallback_alpha0=alpha_val,
+            fallback_beta0=beta_val,
+        )
+
         strat, reason, bayes_w, graph_w = select_strategy(
             metric_name=metric_name,
-            alpha=float(state.get("alpha", 5.0)),
-            beta=float(state.get("beta", 5.0)),
+            alpha=alpha_val,
+            beta=beta_val,
             sample_count=float(state.get("sample_count", 0.0)),
-            predictiveness=0.5,
+            predictiveness=pred,
             incoming_causal_edges=incoming,
             cfg=cfg,
         )
@@ -484,10 +500,12 @@ def get_learning_strategy(project_id: int, db: Session = Depends(get_db)):
             "reason": reason,
             "bayes_weight": bayes_w,
             "graph_weight": graph_w,
+            "predictiveness": pred,
         }
 
     return {
         "project_id": project_id,
+        "context_key": ctx_key,
         "strategies": strategies,
     }
 

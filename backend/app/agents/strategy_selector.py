@@ -43,10 +43,15 @@ def select_strategy(
     has_sufficient_data = sample_count >= cfg.confidence_sample_target
     has_low_variance = variance < cfg.strategy_variance_threshold
 
+    def _get_val(e, key, default):
+        if isinstance(e, dict):
+            return e.get(key, default)
+        return getattr(e, key, default)
+
     has_strong_graph = any(
-        float(getattr(e, "edge_strength", 0.0) or 0.0) >= cfg.strategy_graph_confidence_threshold
-        and float(getattr(e, "causal_confidence", 0.0) or 0.0) >= 0.4
-        and getattr(e, "is_active", True)
+        float(_get_val(e, "edge_strength", 0.0) or 0.0) >= cfg.strategy_graph_confidence_threshold
+        and float(_get_val(e, "causal_confidence", 0.0) or 0.0) >= 0.4
+        and bool(_get_val(e, "is_active", True))
         for e in incoming_causal_edges
     )
 
@@ -62,7 +67,7 @@ def select_strategy(
     bayes_certainty = (1.0 - min(1.0, variance * 4.0)) * predictiveness
     graph_certainty = 0.5
     if incoming_causal_edges:
-        avg_str = sum(float(getattr(e, "edge_strength", 0.5)) for e in incoming_causal_edges) / len(incoming_causal_edges)
+        avg_str = sum(float(_get_val(e, "edge_strength", 0.5) or 0.5) for e in incoming_causal_edges) / len(incoming_causal_edges)
         graph_certainty = avg_str
 
     tot_certainty = bayes_certainty + graph_certainty
