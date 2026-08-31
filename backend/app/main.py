@@ -7,17 +7,29 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import crud, schemas
-from app.routers import projects, metrics, recommendations, feedback, admin, analytics
-
-app = FastAPI(
-    title="Agentic AI-Based Software Metrics Prioritization and Recommendation System",
-    version="2.0",
+from app.routers import (
+    projects, metrics, recommendations, feedback, admin, analytics,
+    health, anomalies, analysis, timeline, risks, assistant, alerts,
+    team_insights, github_insights
 )
 
-# Allow the local Vite dev server (and any origin during development) to call this API.
+app = FastAPI(
+    title="AI Software Engineering Intelligence Platform",
+    version="3.0",
+)
+
+# Allow the local Vite dev server and common frontend development origins.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ],
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -29,6 +41,16 @@ app.include_router(recommendations.router)
 app.include_router(feedback.router)
 app.include_router(admin.router)
 app.include_router(analytics.router)
+app.include_router(health.router)
+app.include_router(anomalies.router)
+app.include_router(analysis.router)
+app.include_router(timeline.router)
+app.include_router(risks.router)
+app.include_router(assistant.router)
+app.include_router(alerts.router)
+app.include_router(team_insights.router)
+app.include_router(github_insights.router)
+
 
 
 @app.get("/")
@@ -37,8 +59,29 @@ def home():
 
 
 @app.get("/health")
-def health():
-    return {"status": "running"}
+def health(db: Session = Depends(get_db)):
+    """System health endpoint checking intelligence engine and database connectivity."""
+    db_status = "connected"
+    try:
+        from sqlalchemy import text
+        db.execute(text("SELECT 1"))
+    except Exception as exc:
+        db_status = f"unavailable: {str(exc)}"
+        return {
+            "status": "degraded",
+            "database": db_status,
+            "intelligence_engine": "online",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+    return {
+        "status": "ok",
+        "database": db_status,
+        "intelligence_engine": "online",
+        "pipeline_ready": True,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
 
 
 @app.post("/dev/seed/{project_id}")

@@ -251,3 +251,141 @@ class GoalConstraint(Base):
         {"extend_existing": True},
     )
 
+
+class HealthSnapshot(Base):
+    """Historical project health score snapshots for trend evaluation."""
+    __tablename__ = "health_snapshots"
+
+    id                 = Column(BigInteger, primary_key=True, index=True)
+    project_id         = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    overall_score      = Column(Numeric(6, 2), nullable=False)
+    code_quality_score = Column(Numeric(6, 2), nullable=False)
+    process_score      = Column(Numeric(6, 2), nullable=False)
+    devops_score       = Column(Numeric(6, 2), nullable=False)
+    ai_risk_score      = Column(Numeric(6, 2), nullable=False)
+    status_trend       = Column(String(20), default="stable")  # improving | stable | declining
+    created_at         = Column(TIMESTAMP, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_health_snapshots_project", "project_id", "created_at"),
+        {"extend_existing": True},
+    )
+
+
+class Anomaly(Base):
+    """Detected metric anomalies."""
+    __tablename__ = "anomalies"
+
+    id                 = Column(BigInteger, primary_key=True, index=True)
+    project_id         = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    metric_key         = Column(String(100), nullable=False)
+    metric_name        = Column(String(255), nullable=False)
+    current_value      = Column(Numeric(10, 4), nullable=False)
+    expected_min       = Column(Numeric(10, 4), nullable=False)
+    expected_max       = Column(Numeric(10, 4), nullable=False)
+    deviation_pct      = Column(Numeric(6, 2), nullable=False)
+    severity           = Column(String(20), nullable=False)   # critical | warning | info
+    possible_cause     = Column(Text, nullable=True)
+    recommended_action = Column(Text, nullable=True)
+    is_acknowledged    = Column(Boolean, default=False)
+    detected_at        = Column(TIMESTAMP, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_anomalies_project", "project_id", "detected_at"),
+        {"extend_existing": True},
+    )
+
+
+class RecommendationAction(Base):
+    """Audit log of actions/interventions taken on recommendations."""
+    __tablename__ = "recommendation_actions"
+
+    id                = Column(BigInteger, primary_key=True, index=True)
+    recommendation_id = Column(BigInteger, ForeignKey("recommendations.id"), nullable=False)
+    action_type       = Column(String(50), nullable=False)  # start | resolve | verify | dismiss
+    notes             = Column(Text, nullable=True)
+    created_at        = Column(TIMESTAMP, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_rec_actions_rec", "recommendation_id"),
+        {"extend_existing": True},
+    )
+
+
+class RecommendationOutcome(Base):
+    """Automated before/after verification result for resolved recommendations."""
+    __tablename__ = "recommendation_outcomes"
+
+    id                = Column(BigInteger, primary_key=True, index=True)
+    recommendation_id = Column(BigInteger, ForeignKey("recommendations.id"), nullable=False)
+    project_id        = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    metric_key        = Column(String(100), nullable=False)
+    before_value      = Column(Numeric(10, 4), nullable=False)
+    after_value       = Column(Numeric(10, 4), nullable=False)
+    improvement_pct   = Column(Numeric(6, 2), nullable=False)
+    goal_achieved     = Column(Boolean, nullable=False)
+    measured_at       = Column(TIMESTAMP, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_rec_outcomes_rec", "recommendation_id"),
+        {"extend_existing": True},
+    )
+
+
+class ProjectEvent(Base):
+    """Project timeline events feed."""
+    __tablename__ = "project_events"
+
+    id            = Column(BigInteger, primary_key=True, index=True)
+    project_id    = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    event_type    = Column(String(50), nullable=False)  # metric_degraded | metric_improved | rec_generated | rec_resolved | anomaly | deployment | commit | pr | ai_intervention
+    title         = Column(String(255), nullable=False)
+    description   = Column(Text, nullable=True)
+    metadata_json = Column(JSONB, nullable=True)
+    created_at    = Column(TIMESTAMP, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_project_events_project", "project_id", "created_at"),
+        {"extend_existing": True},
+    )
+
+
+class Alert(Base):
+    """Alerts generated for critical deviations, health changes, and anomalies."""
+    __tablename__ = "alerts"
+
+    id         = Column(BigInteger, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    alert_type = Column(String(50), nullable=False)   # critical | warning | info | improvement
+    title      = Column(String(255), nullable=False)
+    message    = Column(Text, nullable=False)
+    is_read    = Column(Boolean, default=False)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_alerts_project", "project_id", "is_read"),
+        {"extend_existing": True},
+    )
+
+
+class RiskPrediction(Base):
+    """Predictive risk analysis records."""
+    __tablename__ = "risk_predictions"
+
+    id                   = Column(BigInteger, primary_key=True, index=True)
+    project_id           = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    risk_category        = Column(String(50), nullable=False)  # deployment_failure | incident_risk | tech_debt | quality_degradation | delivery_slowdown
+    risk_level           = Column(String(20), nullable=False)  # critical | high | medium | low
+    probability          = Column(Numeric(5, 4), nullable=False)  # 0.0 to 1.0
+    affected_metric      = Column(String(100), nullable=False)
+    reason               = Column(Text, nullable=False)
+    confidence           = Column(Numeric(5, 4), nullable=False)
+    recommended_mitigation = Column(Text, nullable=True)
+    created_at           = Column(TIMESTAMP, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_risk_predictions_project", "project_id", "created_at"),
+        {"extend_existing": True},
+    )
+
+

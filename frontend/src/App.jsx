@@ -1,8 +1,22 @@
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Sidebar from "./components/Sidebar";
+import HealthHero from "./components/HealthHero";
+import AnomalyPanel from "./components/AnomalyPanel";
 import RecommendationCard from "./components/RecommendationCard";
 import MetricCard from "./components/MetricCard";
 import FeedbackAnalytics from "./components/FeedbackAnalytics";
+import WhatIfSimulator from "./components/WhatIfSimulator";
+import RootCauseModal from "./components/RootCauseModal";
+import AIAssistant from "./components/AIAssistant";
+import RiskPredictor from "./components/RiskPredictor";
+import TimelineView from "./components/TimelineView";
+import TeamInsightsView from "./components/TeamInsightsView";
+import ExecutiveDashboard from "./components/ExecutiveDashboard";
+import AlertCenter from "./components/AlertCenter";
+import CausalGraphVisualizer from "./components/CausalGraphVisualizer";
+import ConstraintsPanel from "./components/ConstraintsPanel";
+import SystemStatusIndicator from "./components/SystemStatusIndicator";
+import ApiErrorState from "./components/ApiErrorState";
 import { api } from "./api";
 import "./App.css";
 
@@ -31,6 +45,10 @@ export default function App() {
   const [metrics, setMetrics] = useState([]);
   const [metricsHistory, setMetricsHistory] = useState({});
   const [recommendations, setRecommendations] = useState([]);
+  const [healthData, setHealthData] = useState(null);
+  const [anomalies, setAnomalies] = useState([]);
+  const [unreadAlertsCount, setUnreadAlertsCount] = useState(0);
+
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState(null);
@@ -38,17 +56,23 @@ export default function App() {
   const [newProject, setNewProject] = useState({ name: "", source: "github", external_id: "" });
   const [aiEnabled, setAiEnabled] = useState(false);
 
-  // Top-level view: "project" | "analytics"
+  // App views: "project" | "executive" | "analytics" | "risks" | "timeline" | "team" | "graph"
   const [appView, setAppView] = useState("project");
+
 
   // Filter & Queue tabs states
   const [activeTab, setActiveTab] = useState("open");
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
 
-  // Modal state
+  // Modal dialog states
   const [selectedMetric, setSelectedMetric] = useState(null);
   const [hoveredPoint, setHoveredPoint] = useState(null);
+  const [showWhatIf, setShowWhatIf] = useState(false);
+  const [rootCauseMetric, setRootCauseMetric] = useState(null);
+  const [showAssistant, setShowAssistant] = useState(false);
+  const [showAlerts, setShowAlerts] = useState(false);
+  const [showConstraints, setShowConstraints] = useState(false);
 
   // Weight Lens panel
   const [weightLensOpen, setWeightLensOpen] = useState(false);
@@ -60,17 +84,28 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
-      const [metricsData, recsData, historyData] = await Promise.all([
+      const [metricsData, recsData, historyData, healthRes, anomRes, alertsRes] = await Promise.all([
         api.getLatestMetrics(projectId),
         api.getRecommendations(projectId),
         api.getAllMetricsHistory(projectId).catch(() => ({})),
+        api.getProjectHealth(projectId).catch(() => null),
+        api.getAnomalies(projectId).catch(() => []),
+        api.getAlerts(projectId, true).catch(() => []),
       ]);
-      setMetrics(metricsData);
-      setRecommendations(recsData);
+      setMetrics(metricsData || []);
+      setRecommendations(recsData || []);
       setMetricsHistory(historyData || {});
-      setAiEnabled(recsData.some((r) => r.ai_narrated));
+      setHealthData(healthRes);
+      setAnomalies(anomRes || []);
+      setUnreadAlertsCount(alertsRes?.length || 0);
+      setAiEnabled(recsData?.some((r) => r.ai_narrated));
     } catch (e) {
-      setError(e.message);
+      console.error("API error loading project data:", e);
+      setError({
+        message: e.message || "Failed to load project data",
+        status: e.status || "500",
+        endpoint: e.endpoint || "/projects",
+      });
     } finally {
       setLoading(false);
     }
@@ -80,7 +115,13 @@ export default function App() {
     api.getProjects().then((data) => {
       setProjects(data);
       if (data.length > 0) setActiveProjectId(data[0].id);
-    }).catch((e) => setError(e.message));
+    }).catch((e) => {
+      setError({
+        message: e.message || "Failed to load projects",
+        status: e.status || "500",
+        endpoint: e.endpoint || "/projects",
+      });
+    });
   }, []);
 
   useEffect(() => {
@@ -99,7 +140,7 @@ export default function App() {
       setShowNewProject(false);
       setNewProject({ name: "", source: "github", external_id: "" });
     } catch (e) {
-      setError(e.message);
+      setError({ message: e.message, status: e.status, endpoint: e.endpoint });
     }
   }
 
@@ -110,7 +151,7 @@ export default function App() {
       await api.seedDemoData(activeProjectId);
       await loadProjectData(activeProjectId);
     } catch (e) {
-      setError(e.message);
+      setError({ message: e.message, status: e.status, endpoint: e.endpoint });
     } finally {
       setLoading(false);
     }
@@ -124,8 +165,11 @@ export default function App() {
       const recs = await api.generateRecommendations(activeProjectId);
       setRecommendations(recs);
       setAiEnabled(recs.some((r) => r.ai_narrated));
+      // Refresh health
+      const h = await api.getProjectHealth(activeProjectId);
+      setHealthData(h);
     } catch (e) {
-      setError(e.message);
+      setError({ message: e.message, status: e.status, endpoint: e.endpoint });
     } finally {
       setGenerating(false);
     }
@@ -138,7 +182,7 @@ export default function App() {
         prev.map((r) => (r.id === recId ? { ...r, status: updated.status } : r))
       );
     } catch (e) {
-      setError(e.message);
+      setError({ message: e.message, status: e.status, endpoint: e.endpoint });
     }
   }
 
@@ -149,7 +193,7 @@ export default function App() {
       const data = await api.getWeightComparison(activeProjectId);
       setWeightLens(data);
     } catch (e) {
-      setError(e.message);
+      setError({ message: e.message, status: e.status, endpoint: e.endpoint });
     } finally {
       setWeightLensLoading(false);
     }
@@ -163,17 +207,16 @@ export default function App() {
     });
   }
 
-  // Get count of recommendations by status
   const getTabCount = (status) => {
     return recommendations.filter((r) => r.status === status).length;
   };
 
-  const openRecsCount = getTabCount("open");
-  const criticalCount = recommendations.filter((r) => r.status === "open" && r.priority_score >= 60).length;
-
-  // Filter recommendations
   const filteredRecs = recommendations.filter((rec) => {
-    const matchesStatus = rec.status === activeTab;
+    const matchesStatus =
+      activeTab === "open"
+        ? rec.status === "open" || rec.status === "in_progress"
+        : rec.status === activeTab;
+
     const matchesSearch = searchQuery
       ? rec.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         rec.explanation.toLowerCase().includes(searchQuery.toLowerCase())
@@ -194,7 +237,6 @@ export default function App() {
     return acc;
   }, {});
 
-  // Render modal chart SVG
   const renderHistoryChart = (metric) => {
     const points = metricsHistory[metric.metric_id] || [];
     if (points.length === 0) {
@@ -229,7 +271,6 @@ export default function App() {
       return height - paddingY - ((val - minVal) / valRange) * (height - 2 * paddingY);
     };
 
-    // Construct path line
     const pathD = points.reduce((acc, p, i) => {
       const x = getX(i);
       const y = getY(p.value);
@@ -237,19 +278,11 @@ export default function App() {
     }, "");
 
     const targetY = targetVal !== undefined ? getY(targetVal) : null;
-
-    // Get color based on category
-    const categoryColors = {
-      code_quality: "var(--amber)",
-      process: "var(--teal)",
-      devops: "var(--rose)",
-    };
-    const chartColor = categoryColors[metric.category] || "var(--violet)";
+    const chartColor = "var(--teal)";
 
     return (
       <div className="modal-chart-svg-container">
         <svg className="modal-chart-svg" viewBox={`0 0 ${width} ${height}`}>
-          {/* Horizontal Grid lines */}
           {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
             const val = minVal + ratio * valRange;
             const y = getY(val);
@@ -263,7 +296,6 @@ export default function App() {
             );
           })}
 
-          {/* Target Line */}
           {targetY !== null && (
             <g>
               <line
@@ -272,29 +304,25 @@ export default function App() {
                 y1={targetY}
                 x2={width - paddingX}
                 y2={targetY}
-                stroke={chartColor}
-                opacity="0.4"
+                stroke="var(--amber)"
+                opacity="0.6"
               />
               <text
                 x={width - paddingX - 10}
                 y={targetY - 6}
-                fill={chartColor}
+                fill="var(--amber)"
                 fontSize="10"
                 fontFamily="var(--font-mono)"
                 textAnchor="end"
-                opacity="0.8"
               >
-                Target: {targetVal}
-                {metric.unit}
+                Target: {targetVal} {metric.unit}
               </text>
             </g>
           )}
 
-          {/* Line Path */}
           <path className="chart-line-glow" d={pathD} stroke={chartColor} />
           <path className="chart-line" d={pathD} stroke={chartColor} />
 
-          {/* Points */}
           {points.map((p, i) => {
             const cx = getX(i);
             const cy = getY(p.value);
@@ -315,7 +343,6 @@ export default function App() {
           })}
         </svg>
 
-        {/* Hover Tooltip */}
         {hoveredPoint && (
           <div
             className="chart-tooltip-box"
@@ -349,59 +376,52 @@ export default function App() {
         activeProjectId={activeProjectId}
         onSelectProject={setActiveProjectId}
         aiEnabled={aiEnabled}
+        appView={appView}
+        onSelectView={setAppView}
+        unreadAlertsCount={unreadAlertsCount}
+        onOpenAlerts={() => setShowAlerts(true)}
+        onOpenAssistant={() => setShowAssistant(true)}
       />
 
       <main className="main-panel">
         <header className="top-bar">
-          <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-            <div>
-              <h1 className="page-title">
-                {appView === "analytics"
-                  ? "Feedback Analytics"
-                  : projects.find((p) => p.id === activeProjectId)?.name || "No project selected"}
-              </h1>
-              <p className="page-subtitle">
-                {appView === "analytics"
-                  ? "AI recommendation helpfulness insights"
-                  : "Telemetry-driven prioritization & actions"}
-              </p>
-            </div>
-            {/* View switcher */}
-            <div style={{
-              display: "flex", gap: 4,
-              background: "var(--surface-raised)",
-              border: "1px solid var(--border)",
-              borderRadius: 10, padding: 3,
-              marginLeft: 8,
-            }}>
-              {[
-                { key: "project",   label: "🏗️ Dashboard" },
-                { key: "analytics", label: "📊 Analytics" },
-              ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setAppView(key)}
-                  style={{
-                    border: "none", cursor: "pointer",
-                    padding: "5px 14px", borderRadius: 7, fontSize: 12, fontWeight: 600,
-                    background: appView === key ? "var(--accent-primary)" : "transparent",
-                    color: appView === key ? "#fff" : "var(--text-muted)",
-                    transition: "all 0.2s",
-                  }}
-                >{label}</button>
-              ))}
-            </div>
+          <div className="top-title-block">
+            <h1 className="page-title">
+              {appView === "analytics"
+                ? "Feedback Analytics"
+                : appView === "executive"
+                ? "Executive Overview"
+                : appView === "risks"
+                ? "Predictive Risk Intelligence"
+                : appView === "timeline"
+                ? "Event Timeline"
+                : appView === "team"
+                ? "Engineering Team Insights"
+                : appView === "graph"
+                ? "Self-Evolving Causal Graph"
+                : projects.find((p) => p.id === activeProjectId)?.name || "AI Engineering Platform"}
+            </h1>
+            <p className="page-subtitle">
+              {projects.find((p) => p.id === activeProjectId)?.external_id || "Evidence-Adaptive Multi-Agent Intelligence"}
+            </p>
           </div>
 
           <div className="top-actions">
+            <SystemStatusIndicator />
             <button className="btn ghost" onClick={() => setShowNewProject((s) => !s)}>
               + New project
+            </button>
+            <button className="btn secondary" onClick={() => setShowWhatIf(true)} disabled={!activeProjectId}>
+              🎛️ What-If
+            </button>
+            <button className="btn secondary" onClick={() => setShowConstraints(true)} disabled={!activeProjectId}>
+              🎯 Goal Optimizer
             </button>
             <button className="btn secondary" onClick={handleSeed} disabled={!activeProjectId || loading}>
               Seed demo data
             </button>
             <button className="btn primary" onClick={handleGenerate} disabled={!activeProjectId || generating}>
-              {generating ? "Reasoning…" : "Run agent"}
+              {generating ? "Reasoning & Arbitrating…" : "⚡ Run Agent Pipeline"}
             </button>
           </div>
         </header>
@@ -423,48 +443,80 @@ export default function App() {
               <option value="sonarqube">SonarQube</option>
             </select>
             <input
-              placeholder="External ID / repo slug"
+              placeholder="Repository URL / Server identifier"
               value={newProject.external_id}
               onChange={(e) => setNewProject({ ...newProject, external_id: e.target.value })}
+              style={{ flex: 1, minWidth: 280 }}
               required
             />
             <button type="submit" className="btn primary">Create</button>
           </form>
         )}
 
-        {error && <div className="error-banner">{error}</div>}
-
-        {/* Analytics view — always renderable, no project required */}
-        {appView === "analytics" && (
-          <div style={{ padding: "24px 0" }}>
-            <FeedbackAnalytics />
-          </div>
+        {error && typeof error === "object" && (
+          <ApiErrorState
+            title="Intelligence Pipeline Request Exception"
+            message={error.message}
+            endpoint={error.endpoint}
+            status={error.status}
+            errorDetails={error.message}
+            onRetry={() => loadProjectData(activeProjectId)}
+          />
         )}
 
-        {appView === "project" && !activeProjectId && !error && (
-          <div className="empty-state">
-            <p>No project selected yet. Create one to get started.</p>
-          </div>
+        {/* View Routing */}
+        {appView === "analytics" && <FeedbackAnalytics />}
+        {appView === "executive" && (
+          <ExecutiveDashboard
+            health={healthData}
+            recommendations={recommendations}
+            anomalies={anomalies}
+            metrics={metrics}
+            loading={loading}
+            error={error}
+            onRetry={() => loadProjectData(activeProjectId)}
+            onOpenRootCause={(key) => setRootCauseMetric(key)}
+            onStartAction={(recId) => handleStatusChange(recId, "in_progress")}
+          />
+        )}
+        {appView === "risks" && <RiskPredictor projectId={activeProjectId} />}
+        {appView === "timeline" && <TimelineView projectId={activeProjectId} />}
+        {appView === "team" && <TeamInsightsView projectId={activeProjectId} />}
+        {appView === "graph" && (
+          <CausalGraphVisualizer
+            projectId={activeProjectId}
+            metrics={metrics}
+            recommendations={recommendations}
+          />
         )}
 
+        {appView === "risks" && <RiskPredictor projectId={activeProjectId} />}
+        {appView === "timeline" && <TimelineView projectId={activeProjectId} />}
+        {appView === "team" && <TeamInsightsView projectId={activeProjectId} />}
+        {appView === "graph" && <CausalGraphVisualizer projectId={activeProjectId} />}
+
+        {/* Main Dashboard View */}
         {appView === "project" && activeProjectId && (
           <>
-            <section className="kpi-strip">
-              <div className="kpi-card">
-                <div className="kpi-value">{openRecsCount}</div>
-                <div className="kpi-label">Open recommendations</div>
-              </div>
-              <div className="kpi-card critical">
-                <div className="kpi-value">{criticalCount}</div>
-                <div className="kpi-label">Critical priority (Active)</div>
-              </div>
-              <div className="kpi-card">
-                <div className="kpi-value">{metrics.length}</div>
-                <div className="kpi-label">Metrics tracked</div>
-              </div>
-            </section>
+            {/* 1. Health Hero */}
+            <HealthHero
+              health={healthData}
+              onOpenWhatIf={() => setShowWhatIf(true)}
+              onOpenRisks={() => setAppView("risks")}
+            />
 
-            {/* ── Weight Lens Panel ── */}
+            {/* 2. Anomaly Detection Panel */}
+            <AnomalyPanel
+              anomalies={anomalies}
+              onAcknowledge={(id) =>
+                setAnomalies((prev) =>
+                  prev.map((a) => (a.id === id ? { ...a, is_acknowledged: true } : a))
+                )
+              }
+              onInvestigateRootCause={(key) => setRootCauseMetric(key)}
+            />
+
+            {/* 3. Weight Lens Panel */}
             <div className="weight-lens">
               <div
                 className={`weight-lens-header ${weightLensOpen ? "open" : ""}`}
@@ -472,8 +524,8 @@ export default function App() {
               >
                 <div className="weight-lens-title">
                   <span className="weight-lens-icon">⚖️</span>
-                  Weight Lens
-                  <span className="weight-lens-subtitle">Base prior → Self-learned → Adaptive context</span>
+                  Evidence-Adaptive Arbitration & Weight Lens
+                  <span className="weight-lens-subtitle">Prior → Bayesian Self-Learned → Adaptive Context</span>
                 </div>
                 <div className="weight-lens-actions" onClick={(e) => e.stopPropagation()}>
                   {weightLensOpen && (
@@ -489,105 +541,47 @@ export default function App() {
                 </div>
               </div>
 
-              {weightLensOpen && (
+              {weightLensOpen && weightLens && (
                 <div className="weight-lens-body">
-                  {weightLensLoading && !weightLens && (
-                    <div style={{ color: "var(--text-muted)", fontSize: "13px" }}>Loading weight data…</div>
-                  )}
-
-                  {weightLens && (
-                    <>
-                      {!weightLens.has_risk_profile && (
-                        <div className="weight-lens-no-profile">
-                          ⚠️ No risk profile set for this project — adaptive context equals self-learned weights.
-                          Set a risk profile via the API to enable context-aware adjustments.
-                        </div>
-                      )}
-
-                      <table className="weight-table">
-                        <thead>
-                          <tr>
-                            <th>Category</th>
-                            <th>Base Prior</th>
-                            <th>Self-Learned</th>
-                            <th>Adaptive Context</th>
-                            <th>Effective</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {Object.keys(weightLens.base_prior).map((cat) => {
-                            const base  = weightLens.base_prior[cat];
-                            const sl    = weightLens.self_learned[cat];
-                            const adapt = weightLens.adaptive_context[cat];
-                            const eff   = weightLens.effective[cat];
-                            const slChanged    = Math.abs(sl - base) > 0.005;
-                            const adaptChanged = Math.abs(adapt - sl) > 0.005;
-                            const effDelta = eff - base;
-                            const labels = { code_quality: "Code Quality", process: "Process", devops: "DevOps" };
-                            return (
-                              <tr key={cat}>
-                                <td className={`wt-category ${cat}`}>{labels[cat] || cat}</td>
-                                <td className="wt-value">{base.toFixed(3)}</td>
-                                <td className={`wt-value ${slChanged ? "changed" : ""}`}>
-                                  {sl.toFixed(3)}
-                                  {slChanged && (
-                                    <span className={`weight-delta ${sl > base ? "up" : "down"}`}>
-                                      {sl > base ? "+" : ""}{(sl - base).toFixed(3)}
-                                    </span>
-                                  )}
-                                </td>
-                                <td className={`wt-value ${adaptChanged ? "changed" : ""}`}>
-                                  {adapt.toFixed(3)}
-                                  {adaptChanged && (
-                                    <span className={`weight-delta ${adapt > sl ? "up" : "down"}`}>
-                                      {adapt > sl ? "+" : ""}{(adapt - sl).toFixed(3)}
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="wt-effective">
-                                  {eff.toFixed(3)}
-                                  {Math.abs(effDelta) > 0.005 && (
-                                    <span className={`weight-delta ${effDelta > 0 ? "up" : "down"}`}>
-                                      {effDelta > 0 ? "+" : ""}{effDelta.toFixed(3)} vs base
-                                    </span>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-
-                      {weightLens.adaptive_steps?.length > 0 && (
-                        <div className="weight-lens-steps">
-                          <div className="weight-lens-steps-label">Adaptive context reasoning</div>
-                          {weightLens.adaptive_steps.map((step, i) => (
-                            <div key={i} className="weight-lens-step">
-                              <span className="wl-step-agent">{step.agent}</span>
-                              {step.detail}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  )}
+                  <table className="weight-table">
+                    <thead>
+                      <tr>
+                        <th>Category</th>
+                        <th>Base Prior</th>
+                        <th>Self-Learned</th>
+                        <th>Adaptive Context</th>
+                        <th>Effective Weight</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.keys(weightLens.base_prior || {}).map((cat) => (
+                        <tr key={cat}>
+                          <td className={`wt-category ${cat}`}>{CATEGORY_LABELS[cat] || cat}</td>
+                          <td className="wt-value">{weightLens.base_prior[cat]?.toFixed(3)}</td>
+                          <td className="wt-value">{weightLens.self_learned[cat]?.toFixed(3)}</td>
+                          <td className="wt-value">{weightLens.adaptive_context[cat]?.toFixed(3)}</td>
+                          <td className="wt-effective">{weightLens.effective[cat]?.toFixed(3)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
 
+            {/* 4. Priority Queue & Metrics Panel Grid */}
             <div className="content-grid">
               <section className="priority-queue">
                 <div className="section-heading">
-                  <h2>Priority queue</h2>
-                  <span className="section-caption">Telemetry-driven, weighted suggestions</span>
+                  <h2>Prioritized AI Action Recommendations</h2>
+                  <span className="section-caption">Evidence-adaptive, causal-discounted suggestions</span>
                 </div>
 
-                {/* Filters and search */}
                 <div className="queue-controls">
                   <input
                     type="text"
                     className="search-input"
-                    placeholder="Search recommendations..."
+                    placeholder="Search action plans, problems, root causes..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -603,19 +597,12 @@ export default function App() {
                   </select>
                 </div>
 
-                {/* Queue status tabs */}
                 <div className="tab-strip">
                   <button
                     className={`tab-btn ${activeTab === "open" ? "active" : ""}`}
                     onClick={() => setActiveTab("open")}
                   >
-                    Active <span className="tab-badge">{getTabCount("open")}</span>
-                  </button>
-                  <button
-                    className={`tab-btn ${activeTab === "acknowledged" ? "active" : ""}`}
-                    onClick={() => setActiveTab("acknowledged")}
-                  >
-                    Acknowledged <span className="tab-badge">{getTabCount("acknowledged")}</span>
+                    Active / In Progress <span className="tab-badge">{getTabCount("open") + getTabCount("in_progress")}</span>
                   </button>
                   <button
                     className={`tab-btn ${activeTab === "actioned" ? "active" : ""}`}
@@ -633,7 +620,7 @@ export default function App() {
 
                 {filteredRecs.length === 0 && (
                   <div className="empty-state">
-                    <p>No recommendations found for this category or filter.</p>
+                    <p>No recommendations match your current filter.</p>
                   </div>
                 )}
 
@@ -644,6 +631,7 @@ export default function App() {
                       recommendation={rec}
                       rank={i + 1}
                       onStatusChange={handleStatusChange}
+                      onOpenRootCause={(key) => setRootCauseMetric(key)}
                     />
                   ))}
                 </div>
@@ -651,8 +639,8 @@ export default function App() {
 
               <section className="metrics-panel">
                 <div className="section-heading">
-                  <h2>Metrics Panel</h2>
-                  <span className="section-caption">Click a card to view detailed history</span>
+                  <h2>Observed Metrics Panel</h2>
+                  <span className="section-caption">Click a card for time-series chart & root cause</span>
                 </div>
 
                 {Object.entries(metricsByCategory).map(([category, list]) => (
@@ -672,12 +660,6 @@ export default function App() {
                     </div>
                   </div>
                 ))}
-
-                {metrics.length === 0 && (
-                  <div className="empty-state">
-                    <p>No metrics recorded yet.</p>
-                  </div>
-                )}
               </section>
             </div>
           </>
@@ -713,14 +695,7 @@ export default function App() {
                 <div className="modal-meta-item">
                   <div className="modal-meta-label">Target Threshold</div>
                   <div className="modal-meta-value highlight-amber">
-                    {METRIC_TARGETS[selectedMetric.metric_key]?.target || "N/A"}{" "}
-                    {selectedMetric.unit}
-                  </div>
-                </div>
-                <div className="modal-meta-item">
-                  <div className="modal-meta-label">Total Logs</div>
-                  <div className="modal-meta-value highlight-teal">
-                    {(metricsHistory[selectedMetric.metric_id] || []).length} recorded
+                    {METRIC_TARGETS[selectedMetric.metric_key]?.target || "N/A"} {selectedMetric.unit}
                   </div>
                 </div>
                 <div className="modal-meta-item">
@@ -729,10 +704,61 @@ export default function App() {
                     {selectedMetric.higher_is_better ? "Higher is better" : "Lower is better"}
                   </div>
                 </div>
+                <div className="modal-meta-item">
+                  <button
+                    className="btn primary full-width"
+                    style={{ marginTop: 8 }}
+                    onClick={() => {
+                      const key = selectedMetric.metric_key;
+                      setSelectedMetric(null);
+                      setRootCauseMetric(key);
+                    }}
+                  >
+                    🔬 Investigate Root Cause
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modals & Slide-outs */}
+      {showWhatIf && (
+        <WhatIfSimulator
+          projectId={activeProjectId}
+          metrics={metrics}
+          onClose={() => setShowWhatIf(false)}
+        />
+      )}
+
+      {rootCauseMetric && (
+        <RootCauseModal
+          projectId={activeProjectId}
+          metricKey={rootCauseMetric}
+          onClose={() => setRootCauseMetric(null)}
+        />
+      )}
+
+      {showAssistant && (
+        <AIAssistant
+          projectId={activeProjectId}
+          onClose={() => setShowAssistant(false)}
+        />
+      )}
+
+      {showAlerts && (
+        <AlertCenter
+          projectId={activeProjectId}
+          onClose={() => setShowAlerts(false)}
+        />
+      )}
+
+      {showConstraints && (
+        <ConstraintsPanel
+          projectId={activeProjectId}
+          onClose={() => setShowConstraints(false)}
+        />
       )}
     </div>
   );

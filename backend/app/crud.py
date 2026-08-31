@@ -21,6 +21,24 @@ def get_project(db: Session, project_id: int):
     return db.query(models.Project).filter(models.Project.id == project_id).first()
 
 
+def get_project_by_external_id(db: Session, external_id: str):
+    return db.query(models.Project).filter(models.Project.external_id == external_id).first()
+
+
+def get_or_create_github_project(db: Session, owner: str, repo: str) -> models.Project:
+    external_id = f"{owner}/{repo}"
+    project = get_project_by_external_id(db, external_id)
+    if not project:
+        project_create = schemas.ProjectCreate(
+            name=f"{owner}/{repo}",
+            source="github",
+            external_id=external_id,
+        )
+        project = create_project(db, project_create)
+    return project
+
+
+
 # ---------- Metric Definitions ----------
 
 def get_metric_definitions(db: Session):
@@ -1233,4 +1251,291 @@ def get_metric_values_dataset(db: Session, project_id: int):
         series_map.setdefault(key, []).append((val.recorded_at, float(val.value)))
 
     return series_map
+
+
+# ---------- Health Snapshots ----------
+
+def create_health_snapshot(
+    db: Session,
+    project_id: int,
+    overall_score: float,
+    code_quality_score: float,
+    process_score: float,
+    devops_score: float,
+    ai_risk_score: float,
+    status_trend: str = "stable",
+) -> models.HealthSnapshot:
+    snapshot = models.HealthSnapshot(
+        project_id=project_id,
+        overall_score=round(overall_score, 2),
+        code_quality_score=round(code_quality_score, 2),
+        process_score=round(process_score, 2),
+        devops_score=round(devops_score, 2),
+        ai_risk_score=round(ai_risk_score, 2),
+        status_trend=status_trend,
+    )
+    db.add(snapshot)
+    db.commit()
+    db.refresh(snapshot)
+    return snapshot
+
+
+def get_latest_health_snapshot(db: Session, project_id: int) -> models.HealthSnapshot | None:
+    return (
+        db.query(models.HealthSnapshot)
+        .filter(models.HealthSnapshot.project_id == project_id)
+        .order_by(desc(models.HealthSnapshot.created_at))
+        .first()
+    )
+
+
+def get_health_snapshots(db: Session, project_id: int, limit: int = 30) -> list[models.HealthSnapshot]:
+    return (
+        db.query(models.HealthSnapshot)
+        .filter(models.HealthSnapshot.project_id == project_id)
+        .order_by(desc(models.HealthSnapshot.created_at))
+        .limit(limit)
+        .all()
+    )
+
+
+# ---------- Anomalies ----------
+
+def create_anomaly(
+    db: Session,
+    project_id: int,
+    metric_key: str,
+    metric_name: str,
+    current_value: float,
+    expected_min: float,
+    expected_max: float,
+    deviation_pct: float,
+    severity: str,
+    possible_cause: str | None = None,
+    recommended_action: str | None = None,
+) -> models.Anomaly:
+    anomaly = models.Anomaly(
+        project_id=project_id,
+        metric_key=metric_key,
+        metric_name=metric_name,
+        current_value=round(current_value, 4),
+        expected_min=round(expected_min, 4),
+        expected_max=round(expected_max, 4),
+        deviation_pct=round(deviation_pct, 2),
+        severity=severity,
+        possible_cause=possible_cause,
+        recommended_action=recommended_action,
+        is_acknowledged=False,
+    )
+    db.add(anomaly)
+    db.commit()
+    db.refresh(anomaly)
+    return anomaly
+
+
+def get_anomalies(db: Session, project_id: int, include_acknowledged: bool = True, limit: int = 50) -> list[models.Anomaly]:
+    q = db.query(models.Anomaly).filter(models.Anomaly.project_id == project_id)
+    if not include_acknowledged:
+        q = q.filter(models.Anomaly.is_acknowledged == False)
+    return q.order_by(desc(models.Anomaly.detected_at)).limit(limit).all()
+
+
+def acknowledge_anomaly(db: Session, anomaly_id: int) -> models.Anomaly | None:
+    anomaly = db.query(models.Anomaly).filter(models.Anomaly.id == anomaly_id).first()
+    if anomaly:
+        anomaly.is_acknowledged = True
+        db.commit()
+        db.refresh(anomaly)
+    return anomaly
+
+
+# ---------- Recommendation Actions & Outcomes ----------
+
+def log_recommendation_action(
+    db: Session,
+    recommendation_id: int,
+    action_type: str,
+    notes: str | None = None,
+) -> models.RecommendationAction:
+    action = models.RecommendationAction(
+        recommendation_id=recommendation_id,
+        action_type=action_type,
+        notes=notes,
+    )
+    db.add(action)
+    db.commit()
+    db.refresh(action)
+    return action
+
+
+def get_recommendation_actions(db: Session, recommendation_id: int) -> list[models.RecommendationAction]:
+    return (
+        db.query(models.RecommendationAction)
+        .filter(models.RecommendationAction.recommendation_id == recommendation_id)
+        .order_by(desc(models.RecommendationAction.created_at))
+        .all()
+    )
+
+
+def record_recommendation_outcome(
+    db: Session,
+    recommendation_id: int,
+    project_id: int,
+    metric_key: str,
+    before_value: float,
+    after_value: float,
+    improvement_pct: float,
+    goal_achieved: bool,
+) -> models.RecommendationOutcome:
+    outcome = models.RecommendationOutcome(
+        recommendation_id=recommendation_id,
+        project_id=project_id,
+        metric_key=metric_key,
+        before_value=round(before_value, 4),
+        after_value=round(after_value, 4),
+        improvement_pct=round(improvement_pct, 2),
+        goal_achieved=goal_achieved,
+    )
+    db.add(outcome)
+    db.commit()
+    db.refresh(outcome)
+    return outcome
+
+
+def get_recommendation_outcome(db: Session, recommendation_id: int) -> models.RecommendationOutcome | None:
+    return (
+        db.query(models.RecommendationOutcome)
+        .filter(models.RecommendationOutcome.recommendation_id == recommendation_id)
+        .order_by(desc(models.RecommendationOutcome.measured_at))
+        .first()
+    )
+
+
+# ---------- Project Events & Timeline ----------
+
+def log_project_event(
+    db: Session,
+    project_id: int,
+    event_type: str,
+    title: str,
+    description: str | None = None,
+    metadata_json: dict | None = None,
+) -> models.ProjectEvent:
+    event = models.ProjectEvent(
+        project_id=project_id,
+        event_type=event_type,
+        title=title,
+        description=description,
+        metadata_json=metadata_json,
+    )
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+def get_project_events(
+    db: Session,
+    project_id: int,
+    event_type: str | None = None,
+    limit: int = 100,
+) -> list[models.ProjectEvent]:
+    q = db.query(models.ProjectEvent).filter(models.ProjectEvent.project_id == project_id)
+    if event_type:
+        q = q.filter(models.ProjectEvent.event_type == event_type)
+    return q.order_by(desc(models.ProjectEvent.created_at)).limit(limit).all()
+
+
+# ---------- Alerts ----------
+
+def create_alert(
+    db: Session,
+    project_id: int,
+    alert_type: str,
+    title: str,
+    message: str,
+) -> models.Alert:
+    alert = models.Alert(
+        project_id=project_id,
+        alert_type=alert_type,
+        title=title,
+        message=message,
+        is_read=False,
+    )
+    db.add(alert)
+    db.commit()
+    db.refresh(alert)
+    return alert
+
+
+def get_alerts(db: Session, project_id: int, unread_only: bool = False, limit: int = 50) -> list[models.Alert]:
+    q = db.query(models.Alert).filter(models.Alert.project_id == project_id)
+    if unread_only:
+        q = q.filter(models.Alert.is_read == False)
+    return q.order_by(desc(models.Alert.created_at)).limit(limit).all()
+
+
+def mark_alert_read(db: Session, alert_id: int) -> models.Alert | None:
+    alert = db.query(models.Alert).filter(models.Alert.id == alert_id).first()
+    if alert:
+        alert.is_read = True
+        db.commit()
+        db.refresh(alert)
+    return alert
+
+
+# ---------- Risk Predictions ----------
+
+def save_risk_predictions(
+    db: Session,
+    project_id: int,
+    predictions: list,
+) -> list[models.RiskPrediction]:
+    saved = []
+    for p in predictions:
+        if isinstance(p, dict):
+            risk_cat = p.get("risk_category")
+            risk_lvl = p.get("risk_level")
+            prob = float(p.get("probability", 0.0))
+            aff_met = p.get("affected_metric")
+            reason = p.get("reason", "")
+            conf = float(p.get("confidence", 0.0))
+            mitigation = p.get("recommended_mitigation")
+        else:
+            risk_cat = getattr(p, "risk_category", None)
+            risk_lvl = getattr(p, "risk_level", None)
+            prob = float(getattr(p, "probability", 0.0))
+            aff_met = getattr(p, "affected_metric", None)
+            reason = getattr(p, "reason", "")
+            conf = float(getattr(p, "confidence", 0.0))
+            mitigation = getattr(p, "recommended_mitigation", None)
+
+        pred = models.RiskPrediction(
+            project_id=project_id,
+            risk_category=risk_cat,
+            risk_level=risk_lvl,
+            probability=round(prob, 4),
+            affected_metric=aff_met,
+            reason=reason,
+            confidence=round(conf, 4),
+            recommended_mitigation=mitigation,
+        )
+        db.add(pred)
+        saved.append(pred)
+    db.commit()
+    for s in saved:
+        db.refresh(s)
+    return saved
+
+
+
+def get_latest_risk_predictions(db: Session, project_id: int) -> list[models.RiskPrediction]:
+    return (
+        db.query(models.RiskPrediction)
+        .filter(models.RiskPrediction.project_id == project_id)
+        .order_by(desc(models.RiskPrediction.created_at))
+        .limit(10)
+        .all()
+    )
+
 

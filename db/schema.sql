@@ -224,4 +224,96 @@ CREATE TABLE goal_constraints (
 );
 CREATE INDEX idx_goal_constraints_project ON goal_constraints(project_id, is_active);
 
+-- ============================================================
+-- v5: AI Software Engineering Intelligence Platform Tables
+-- ============================================================
+CREATE TABLE health_snapshots (
+    id                 BIGSERIAL PRIMARY KEY,
+    project_id         INTEGER NOT NULL REFERENCES projects(id),
+    overall_score      NUMERIC(6, 2) NOT NULL,
+    code_quality_score NUMERIC(6, 2) NOT NULL,
+    process_score      NUMERIC(6, 2) NOT NULL,
+    devops_score       NUMERIC(6, 2) NOT NULL,
+    ai_risk_score      NUMERIC(6, 2) NOT NULL,
+    status_trend       VARCHAR(20) DEFAULT 'stable',
+    created_at         TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX idx_health_snapshots_project ON health_snapshots(project_id, created_at);
+
+CREATE TABLE anomalies (
+    id                 BIGSERIAL PRIMARY KEY,
+    project_id         INTEGER NOT NULL REFERENCES projects(id),
+    metric_key         VARCHAR(100) NOT NULL,
+    metric_name        VARCHAR(255) NOT NULL,
+    current_value      NUMERIC(10, 4) NOT NULL,
+    expected_min       NUMERIC(10, 4) NOT NULL,
+    expected_max       NUMERIC(10, 4) NOT NULL,
+    deviation_pct      NUMERIC(6, 2) NOT NULL,
+    severity           VARCHAR(20) NOT NULL,
+    possible_cause     TEXT,
+    recommended_action TEXT,
+    is_acknowledged    BOOLEAN DEFAULT FALSE,
+    detected_at        TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX idx_anomalies_project ON anomalies(project_id, detected_at);
+
+CREATE TABLE recommendation_actions (
+    id                BIGSERIAL PRIMARY KEY,
+    recommendation_id BIGINT NOT NULL REFERENCES recommendations(id),
+    action_type       VARCHAR(50) NOT NULL,
+    notes             TEXT,
+    created_at        TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX idx_rec_actions_rec ON recommendation_actions(recommendation_id);
+
+CREATE TABLE recommendation_outcomes (
+    id                BIGSERIAL PRIMARY KEY,
+    recommendation_id BIGINT NOT NULL REFERENCES recommendations(id),
+    project_id        INTEGER NOT NULL REFERENCES projects(id),
+    metric_key        VARCHAR(100) NOT NULL,
+    before_value      NUMERIC(10, 4) NOT NULL,
+    after_value       NUMERIC(10, 4) NOT NULL,
+    improvement_pct   NUMERIC(6, 2) NOT NULL,
+    goal_achieved     BOOLEAN NOT NULL,
+    measured_at       TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX idx_rec_outcomes_rec ON recommendation_outcomes(recommendation_id);
+
+CREATE TABLE project_events (
+    id            BIGSERIAL PRIMARY KEY,
+    project_id    INTEGER NOT NULL REFERENCES projects(id),
+    event_type    VARCHAR(50) NOT NULL,
+    title         VARCHAR(255) NOT NULL,
+    description   TEXT,
+    metadata_json JSONB,
+    created_at    TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX idx_project_events_project ON project_events(project_id, created_at);
+
+CREATE TABLE alerts (
+    id         BIGSERIAL PRIMARY KEY,
+    project_id INTEGER NOT NULL REFERENCES projects(id),
+    alert_type VARCHAR(50) NOT NULL,
+    title      VARCHAR(255) NOT NULL,
+    message    TEXT NOT NULL,
+    is_read    BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX idx_alerts_project ON alerts(project_id, is_read);
+
+CREATE TABLE risk_predictions (
+    id                   BIGSERIAL PRIMARY KEY,
+    project_id           INTEGER NOT NULL REFERENCES projects(id),
+    risk_category        VARCHAR(50) NOT NULL,
+    risk_level           VARCHAR(20) NOT NULL,
+    probability          NUMERIC(5, 4) NOT NULL,
+    affected_metric      VARCHAR(100) NOT NULL,
+    reason               TEXT NOT NULL,
+    confidence           NUMERIC(5, 4) NOT NULL,
+    recommended_mitigation TEXT,
+    created_at           TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX idx_risk_predictions_project ON risk_predictions(project_id, created_at);
+
+
 
