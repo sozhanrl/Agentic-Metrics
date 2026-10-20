@@ -626,5 +626,119 @@ class GitHubInsightsResponse(BaseModel):
     recent_activity_feed: list[dict] = []
 
 
+# ---------- Machine Learning Intelligence Schemas ----------
+
+class MLModelResponse(BaseModel):
+    id: int
+    model_id: str
+    name: str
+    category: str
+    algorithm: str
+    target_metric: str
+    version: str
+    status: str
+    hyperparameters: Optional[dict] = None
+    features: Optional[list[str]] = None
+    evaluation_metrics: Optional[dict] = None
+    artifact_path: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class MLPredictionResponse(BaseModel):
+    id: Optional[int] = None
+    project_id: int
+    model_id: str
+    category: str
+    target_metric: str
+    current_value: Optional[float] = None
+    predicted_value: float
+    horizon: str = "next_cycle"
+    lower_bound: Optional[float] = None
+    upper_bound: Optional[float] = None
+    confidence: float = 0.85
+    risk_level: str = "low"
+    feature_contributions: Optional[dict] = None
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class MLCodeModuleResponse(BaseModel):
+    id: Optional[int] = None
+    project_id: int
+    module_name: str
+    file_path: Optional[str] = None
+    churn_pct: float
+    complexity: float
+    coverage_pct: float
+    code_smells: int
+    defect_risk_level: str
+    defect_risk_prob: float
+    top_contributor: Optional[str] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class MLDriftStatusResponse(BaseModel):
+    id: Optional[int] = None
+    project_id: int
+    metric_key: str
+    baseline_mean: float
+    current_mean: float
+    drift_detected: bool
+    p_value: Optional[float] = None
+    drift_score: Optional[float] = None
+    status: str
+    checked_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class MLStatusResponse(BaseModel):
+    status: str
+    ready: bool
+    models_count: int
+    algorithms: list[str]
+    deep_learning_status: dict
+    last_trained_at: Optional[datetime] = None
+
+
+class MLTrainRequest(BaseModel):
+    category: Optional[str] = None
+    force: Optional[bool] = False
+
+
+class MLPredictRequest(BaseModel):
+    project_id: int
+    category: str
+    features: dict
+
+
+# ---------- Dataset ML Endpoints ----------
+
+class DatasetTrainRequest(BaseModel):
+    datasets: Optional[list] = None  # ["defect", "trivial", "nontrivial"]
+    force: Optional[bool] = False
+
+
+class DefectPredictRequest(BaseModel):
+    features: dict  # {LOC, CYCLO, LENGTH, VOLUME, DIFFICULTY, ...}
+    model_name: Optional[str] = "auto"  # "auto", "random_forest", "xgboost", "logistic_regression"
+
+
+class RefactoringPredictRequest(BaseModel):
+    features: dict  # {cbo, wmc, dit, rfc, lcom, loc, ...}
+    dataset_type: str = "trivial"  # "trivial" or "nontrivial"
+    model_name: Optional[str] = "auto"
+
+
 
 

@@ -1,7 +1,42 @@
-export default function MetricCard({ metric, history = [], onClick }) {
+import React from "react";
+
+export default function MetricCard({ metric, history = [], prediction = null, onClick }) {
+  // Compute change from previous observation if history has at least 2 points
+  let changePct = null;
+  if (history && history.length >= 2) {
+    const prev = history[history.length - 2].value;
+    const curr = metric.value;
+    if (prev !== 0) {
+      changePct = ((curr - prev) / Math.abs(prev)) * 100;
+    }
+  }
+
+  // Derive risk badge
+  let riskStatus = "nominal";
+  if (prediction?.risk_level) {
+    riskStatus = prediction.risk_level;
+  } else if (metric.higher_is_better) {
+    if (changePct !== null && changePct < -10) riskStatus = "warning";
+  } else {
+    if (changePct !== null && changePct > 10) riskStatus = "warning";
+  }
+
   const renderSparkline = () => {
-    if (history.length <= 1) {
-      return <div className="sparkline-container" style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: "10px" }}>No history yet</div>;
+    if (!history || history.length <= 1) {
+      return (
+        <div
+          className="sparkline-container"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--text-muted)",
+            fontSize: "10px",
+          }}
+        >
+          No history yet
+        </div>
+      );
     }
     const values = history.map((h) => h.value);
     const maxVal = Math.max(...values);
@@ -13,13 +48,8 @@ export default function MetricCard({ metric, history = [], onClick }) {
     const paddingX = 5;
     const paddingY = 5;
 
-    const getX = (index) => {
-      return paddingX + (index * (width - 2 * paddingX)) / (history.length - 1);
-    };
-
-    const getY = (val) => {
-      return height - paddingY - ((val - minVal) / valRange) * (height - 2 * paddingY);
-    };
+    const getX = (index) => paddingX + (index * (width - 2 * paddingX)) / (history.length - 1);
+    const getY = (val) => height - paddingY - ((val - minVal) / valRange) * (height - 2 * paddingY);
 
     const pathD = history.reduce((acc, h, i) => {
       const x = getX(i);
@@ -41,20 +71,58 @@ export default function MetricCard({ metric, history = [], onClick }) {
   };
 
   return (
-    <div className="metric-card" onClick={onClick} role="button" tabIndex={0}>
-      <div className="metric-name">{metric.display_name}</div>
-      <div className="metric-value">
-        {metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-        <span className="metric-unit">{metric.unit}</span>
+    <div className={`metric-card ${riskStatus}`} onClick={onClick} role="button" tabIndex={0}>
+      <div className="metric-header-row">
+        <div className="metric-name">{metric.display_name}</div>
+        <span className={`metric-risk-pill ${riskStatus}`}>
+          {riskStatus.toUpperCase()}
+        </span>
       </div>
-      
+
+      {/* Observed Measurement */}
+      <div className="metric-observation-section">
+        <div className="metric-observation-label">Observed Telemetry</div>
+        <div className="metric-value">
+          {metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+          <span className="metric-unit">{metric.unit}</span>
+          {changePct !== null && (
+            <span className={`metric-change-pill ${changePct >= 0 ? "positive" : "negative"}`}>
+              {changePct >= 0 ? "↑" : "↓"} {Math.abs(changePct).toFixed(1)}%
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Predicted ML Forecast (Clearly distinguished) */}
+      <div className="metric-prediction-box">
+        <div className="metric-prediction-label">
+          <span>🔮 ML Forecast</span>
+          <span className="metric-horizon">({prediction?.horizon || "Next Cycle"})</span>
+        </div>
+        <div className="metric-predicted-val">
+          {prediction?.predicted_value !== undefined
+            ? `${prediction.predicted_value.toFixed(2)} ${metric.unit || ""}`
+            : "Model Initialized"}
+          {prediction?.lower_bound !== undefined && (
+            <span className="metric-prediction-ci">
+              [{prediction.lower_bound.toFixed(1)} - {prediction.upper_bound.toFixed(1)}]
+            </span>
+          )}
+        </div>
+      </div>
+
       {renderSparkline()}
 
-      <div className="metric-meta">
-        Updated {new Date(metric.recorded_at).toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-        })}
+      <div className="metric-meta-footer">
+        <span className="metric-updated">
+          Updated {new Date(metric.recorded_at).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+          })}
+        </span>
+        <span className="metric-status-badge">
+          {prediction ? "✓ ML Projected" : "● Telemetry Ready"}
+        </span>
       </div>
     </div>
   );

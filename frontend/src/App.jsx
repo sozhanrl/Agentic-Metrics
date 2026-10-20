@@ -17,8 +17,12 @@ import CausalGraphVisualizer from "./components/CausalGraphVisualizer";
 import ConstraintsPanel from "./components/ConstraintsPanel";
 import SystemStatusIndicator from "./components/SystemStatusIndicator";
 import ApiErrorState from "./components/ApiErrorState";
+import MLIntelligencePanel from "./components/MLIntelligencePanel";
+import MetricDetailModal from "./components/MetricDetailModal";
+import DatasetMLPanel from "./components/DatasetMLPanel";
 import { api } from "./api";
 import "./App.css";
+
 
 const CATEGORY_LABELS = {
   code_quality: "Code Quality",
@@ -48,6 +52,8 @@ export default function App() {
   const [healthData, setHealthData] = useState(null);
   const [anomalies, setAnomalies] = useState([]);
   const [unreadAlertsCount, setUnreadAlertsCount] = useState(0);
+  const [mlPredictions, setMlPredictions] = useState([]);
+  const [mlModels, setMlModels] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -56,7 +62,7 @@ export default function App() {
   const [newProject, setNewProject] = useState({ name: "", source: "github", external_id: "" });
   const [aiEnabled, setAiEnabled] = useState(false);
 
-  // App views: "project" | "executive" | "analytics" | "risks" | "timeline" | "team" | "graph"
+  // App views: "project" | "ml" | "dataset_ml" | "executive" | "analytics" | "risks" | "timeline" | "team" | "graph"
   const [appView, setAppView] = useState("project");
 
 
@@ -84,13 +90,15 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
-      const [metricsData, recsData, historyData, healthRes, anomRes, alertsRes] = await Promise.all([
+      const [metricsData, recsData, historyData, healthRes, anomRes, alertsRes, mlPredsRes, mlModelsRes] = await Promise.all([
         api.getLatestMetrics(projectId),
         api.getRecommendations(projectId),
         api.getAllMetricsHistory(projectId).catch(() => ({})),
         api.getProjectHealth(projectId).catch(() => null),
         api.getAnomalies(projectId).catch(() => []),
         api.getAlerts(projectId, true).catch(() => []),
+        api.getMLPredictions(projectId).catch(() => []),
+        api.getMLModels().catch(() => []),
       ]);
       setMetrics(metricsData || []);
       setRecommendations(recsData || []);
@@ -99,6 +107,9 @@ export default function App() {
       setAnomalies(anomRes || []);
       setUnreadAlertsCount(alertsRes?.length || 0);
       setAiEnabled(recsData?.some((r) => r.ai_narrated));
+      setMlPredictions(mlPredsRes || []);
+      setMlModels(mlModelsRes || []);
+
     } catch (e) {
       console.error("API error loading project data:", e);
       setError({
@@ -399,6 +410,8 @@ export default function App() {
                 ? "Engineering Team Insights"
                 : appView === "graph"
                 ? "Self-Evolving Causal Graph"
+                : appView === "dataset_ml"
+                ? "Dataset ML Intelligence"
                 : projects.find((p) => p.id === activeProjectId)?.name || "AI Engineering Platform"}
             </h1>
             <p className="page-subtitle">
@@ -465,6 +478,17 @@ export default function App() {
         )}
 
         {/* View Routing */}
+        {appView === "ml" && (
+          <MLIntelligencePanel
+            projectId={activeProjectId}
+            projects={projects}
+          />
+        )}
+        {appView === "dataset_ml" && (
+          <DatasetMLPanel
+            projectId={activeProjectId}
+          />
+        )}
         {appView === "analytics" && <FeedbackAnalytics />}
         {appView === "executive" && (
           <ExecutiveDashboard
@@ -490,10 +514,6 @@ export default function App() {
           />
         )}
 
-        {appView === "risks" && <RiskPredictor projectId={activeProjectId} />}
-        {appView === "timeline" && <TimelineView projectId={activeProjectId} />}
-        {appView === "team" && <TeamInsightsView projectId={activeProjectId} />}
-        {appView === "graph" && <CausalGraphVisualizer projectId={activeProjectId} />}
 
         {/* Main Dashboard View */}
         {appView === "project" && activeProjectId && (
@@ -649,14 +669,20 @@ export default function App() {
                       {CATEGORY_LABELS[category] || category}
                     </div>
                     <div className="metric-grid">
-                      {list.map((m) => (
-                        <MetricCard
-                          key={m.id}
-                          metric={m}
-                          history={metricsHistory[m.metric_id] || []}
-                          onClick={() => setSelectedMetric(m)}
-                        />
-                      ))}
+                      {list.map((m) => {
+                        const pred = mlPredictions.find(
+                          (p) => p.target_metric === m.metric_key || p.category === m.category
+                        );
+                        return (
+                          <MetricCard
+                            key={m.id}
+                            metric={m}
+                            history={metricsHistory[m.metric_id] || []}
+                            prediction={pred}
+                            onClick={() => setSelectedMetric(m)}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
@@ -666,65 +692,23 @@ export default function App() {
         )}
       </main>
 
-      {/* Metric Detail Modal */}
+      {/* Metric Detail Modal with ML Forecasts & Explainability */}
       {selectedMetric && (
-        <div className="modal-backdrop" onClick={() => setSelectedMetric(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <header className="modal-header">
-              <div className="modal-title-container">
-                <h3 className="modal-title">{selectedMetric.display_name}</h3>
-                <span className="modal-subtitle">
-                  Historical telemetry &bull; {CATEGORY_LABELS[selectedMetric.category] || selectedMetric.category}
-                </span>
-              </div>
-              <button className="modal-close-btn" onClick={() => setSelectedMetric(null)}>
-                &times;
-              </button>
-            </header>
-            <div className="modal-body">
-              <div className="modal-chart-container">
-                {renderHistoryChart(selectedMetric)}
-              </div>
-              <div className="modal-meta-grid">
-                <div className="modal-meta-item">
-                  <div className="modal-meta-label">Current Value</div>
-                  <div className="modal-meta-value">
-                    {selectedMetric.value.toLocaleString()} {selectedMetric.unit}
-                  </div>
-                </div>
-                <div className="modal-meta-item">
-                  <div className="modal-meta-label">Target Threshold</div>
-                  <div className="modal-meta-value highlight-amber">
-                    {METRIC_TARGETS[selectedMetric.metric_key]?.target || "N/A"} {selectedMetric.unit}
-                  </div>
-                </div>
-                <div className="modal-meta-item">
-                  <div className="modal-meta-label">Direction</div>
-                  <div className="modal-meta-value highlight-rose">
-                    {selectedMetric.higher_is_better ? "Higher is better" : "Lower is better"}
-                  </div>
-                </div>
-                <div className="modal-meta-item">
-                  <button
-                    className="btn primary full-width"
-                    style={{ marginTop: 8 }}
-                    onClick={() => {
-                      const key = selectedMetric.metric_key;
-                      setSelectedMetric(null);
-                      setRootCauseMetric(key);
-                    }}
-                  >
-                    🔬 Investigate Root Cause
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <MetricDetailModal
+          metric={selectedMetric}
+          history={metricsHistory[selectedMetric.metric_id] || []}
+          prediction={mlPredictions.find(
+            (p) => p.target_metric === selectedMetric.metric_key || p.category === selectedMetric.category
+          )}
+          modelInfo={mlModels.find((m) => m.category === selectedMetric.category)}
+          onClose={() => setSelectedMetric(null)}
+          onOpenRootCause={(key) => setRootCauseMetric(key)}
+        />
       )}
 
       {/* Modals & Slide-outs */}
       {showWhatIf && (
+
         <WhatIfSimulator
           projectId={activeProjectId}
           metrics={metrics}

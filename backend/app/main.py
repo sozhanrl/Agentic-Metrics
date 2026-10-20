@@ -10,7 +10,7 @@ from app import crud, schemas
 from app.routers import (
     projects, metrics, recommendations, feedback, admin, analytics,
     health, anomalies, analysis, timeline, risks, assistant, alerts,
-    team_insights, github_insights
+    team_insights, github_insights, ml
 )
 
 app = FastAPI(
@@ -50,6 +50,7 @@ app.include_router(assistant.router)
 app.include_router(alerts.router)
 app.include_router(team_insights.router)
 app.include_router(github_insights.router)
+app.include_router(ml.router)
 
 
 
@@ -87,10 +88,8 @@ def health(db: Session = Depends(get_db)):
 @app.post("/dev/seed/{project_id}")
 def seed_demo_data(project_id: int, db: Session = Depends(get_db)):
     """
-    Development helper only: populates the given project with plausible
-    random metric values across all seeded metric definitions, so the
-    dashboard and recommendation engine have something real to work with
-    before your live connectors (Azure DevOps / GitHub / SonarQube) are wired up.
+    Populates realistic historical metric values across all 24 metric definitions,
+    and runs initial ML prediction generation.
     """
     project = crud.get_project(db, project_id)
     if not project:
@@ -100,26 +99,57 @@ def seed_demo_data(project_id: int, db: Session = Depends(get_db)):
     now = datetime.now(timezone.utc)
     created = 0
 
-    for defn in definitions:
-        # A few historical points plus one "current" point, with some
-        # intentionally being off-target so recommendations have something to flag.
-        base = {
-            "code_churn": 22, "cyclomatic_complexity": 14, "test_coverage": 61,
-            "defect_density": 1.8, "sprint_velocity": 24, "cycle_time": 5,
-            "lead_time": 11, "deployment_frequency": 1.2, "change_failure_rate": 27,
-            "mttr": 7,
-        }.get(defn.key, 50)
+    base_map = {
+        # Code Quality
+        "code_churn": 23.01,
+        "cyclomatic_complexity": 14.64,
+        "test_coverage": 62.87,
+        "defect_density": 1.66,
+        "maintainability_index": 76.5,
+        "code_duplication": 5.8,
+        "technical_debt_ratio": 4.6,
+        "code_smells": 28,
+        "predicted_defect_risk": 0.32,
+        # Process
+        "sprint_velocity": 25.57,
+        "cycle_time": 4.82,
+        "lead_time": 11.59,
+        "sprint_predictability": 84.0,
+        "wip": 8.0,
+        "story_spillover_rate": 11.5,
+        "sprint_throughput": 15.0,
+        "predicted_sprint_completion": 88.0,
+        # DevOps
+        "deployment_frequency": 1.17,
+        "change_failure_rate": 28.54,
+        "mttr": 6.8,
+        "deployment_lead_time": 7.4,
+        "deployment_success_rate": 78.5,
+        "rollback_rate": 6.2,
+        "predicted_deployment_failure": 0.28,
+    }
 
-        for i in range(6, -1, -1):
-            jitter = random.uniform(-0.08, 0.08)
-            value = max(0, base * (1 + jitter))
+    for defn in definitions:
+        base = base_map.get(defn.key, 50.0)
+
+        for i in range(12, -1, -1):
+            jitter = random.uniform(-0.07, 0.07)
+            val = max(0.0, base * (1 + jitter))
             db_value = schemas.MetricValueCreate(
                 project_id=project_id,
                 metric_id=defn.id,
-                value=round(value, 2),
+                value=round(val, 2),
                 recorded_at=now - timedelta(days=i * 5),
             )
             crud.create_metric_value(db, db_value)
             created += 1
 
+    try:
+        from app.ml.trainer import MLPlatformCoordinator
+        coord = MLPlatformCoordinator(db)
+        coord.generate_project_predictions(project_id)
+    except Exception:
+        pass
+
     return {"status": "seeded", "metric_values_created": created}
+

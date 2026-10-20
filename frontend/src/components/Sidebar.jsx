@@ -13,6 +13,8 @@ export default function Sidebar({
 }) {
   const navItems = [
     { key: "project", label: "🏗️ Dashboard" },
+    { key: "ml", label: "🧠 ML Intelligence" },
+    { key: "dataset_ml", label: "🔬 Dataset ML" },
     { key: "executive", label: "👔 Executive View" },
     { key: "analytics", label: "📊 Feedback Analytics" },
     { key: "risks", label: "🛡️ Predictive Risks" },
@@ -20,6 +22,7 @@ export default function Sidebar({
     { key: "team", label: "👥 Team Insights" },
     { key: "graph", label: "🧬 Causal Graph" },
   ];
+
 
   return (
     <aside className="sidebar">

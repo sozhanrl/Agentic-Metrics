@@ -389,3 +389,118 @@ class RiskPrediction(Base):
     )
 
 
+class MLModelRegistry(Base):
+    """Model registry tracking trained models, algorithms, and evaluation metrics."""
+    __tablename__ = "ml_model_registry"
+
+    id                 = Column(Integer, primary_key=True, index=True)
+    model_id           = Column(String(100), unique=True, nullable=False, index=True)
+    name               = Column(String(255), nullable=False)
+    category           = Column(String(50), nullable=False)   # code_quality | process | devops
+    algorithm          = Column(String(100), nullable=False)  # random_forest | xgboost | isolation_forest | arima
+    target_metric      = Column(String(100), nullable=False)
+    version            = Column(String(20), nullable=False, default="1.0.0")
+    status             = Column(String(50), nullable=False, default="ready") # ready | training | degraded
+    hyperparameters    = Column(JSONB, nullable=True)
+    features           = Column(JSONB, nullable=True)
+    evaluation_metrics = Column(JSONB, nullable=True)         # mae, rmse, r2, f1, roc_auc, etc.
+    artifact_path      = Column(String(255), nullable=True)
+    created_at         = Column(TIMESTAMP, server_default=func.now())
+    updated_at         = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        Index("idx_ml_registry_cat", "category", "status"),
+        {"extend_existing": True},
+    )
+
+
+class MLTrainingRun(Base):
+    """Audit log of ML training runs and dataset splits."""
+    __tablename__ = "ml_training_runs"
+
+    id            = Column(BigInteger, primary_key=True, index=True)
+    model_id      = Column(String(100), nullable=False, index=True)
+    project_id    = Column(Integer, ForeignKey("projects.id"), nullable=True)
+    status        = Column(String(50), nullable=False)   # success | failed | running
+    train_samples = Column(Integer, nullable=False, default=0)
+    test_samples  = Column(Integer, nullable=False, default=0)
+    metrics_json  = Column(JSONB, nullable=True)
+    duration_ms   = Column(Integer, default=0)
+    error_message = Column(Text, nullable=True)
+    created_at    = Column(TIMESTAMP, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_ml_training_runs_model", "model_id", "created_at"),
+        {"extend_existing": True},
+    )
+
+
+class MLPrediction(Base):
+    """Persisted predictions with intervals, confidence, and feature contributions."""
+    __tablename__ = "ml_predictions"
+
+    id                    = Column(BigInteger, primary_key=True, index=True)
+    project_id            = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    model_id              = Column(String(100), nullable=False)
+    category              = Column(String(50), nullable=False)
+    target_metric         = Column(String(100), nullable=False)
+    current_value         = Column(Numeric(10, 4), nullable=True)
+    predicted_value       = Column(Numeric(10, 4), nullable=False)
+    horizon               = Column(String(50), default="next_cycle")
+    lower_bound           = Column(Numeric(10, 4), nullable=True)
+    upper_bound           = Column(Numeric(10, 4), nullable=True)
+    confidence            = Column(Numeric(5, 4), default=0.85)
+    risk_level            = Column(String(20), default="low") # low | medium | high | critical
+    feature_contributions = Column(JSONB, nullable=True)
+    created_at            = Column(TIMESTAMP, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_ml_predictions_project_metric", "project_id", "target_metric", "created_at"),
+        {"extend_existing": True},
+    )
+
+
+class MLCodeModule(Base):
+    """Module-level risk assessments, complexity, churn, and smell breakdown."""
+    __tablename__ = "ml_code_modules"
+
+    id                = Column(BigInteger, primary_key=True, index=True)
+    project_id        = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    module_name       = Column(String(255), nullable=False)
+    file_path         = Column(String(500), nullable=True)
+    churn_pct         = Column(Numeric(6, 2), default=0.0)
+    complexity        = Column(Numeric(8, 2), default=0.0)
+    coverage_pct      = Column(Numeric(6, 2), default=0.0)
+    code_smells       = Column(Integer, default=0)
+    defect_risk_level = Column(String(20), default="low") # low | medium | high
+    defect_risk_prob  = Column(Numeric(5, 4), default=0.0)
+    top_contributor   = Column(String(100), nullable=True)
+    updated_at        = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        Index("idx_ml_code_modules_proj_risk", "project_id", "defect_risk_level"),
+        {"extend_existing": True},
+    )
+
+
+class MLDriftStatus(Base):
+    """Model and feature drift monitoring records."""
+    __tablename__ = "ml_drift_status"
+
+    id             = Column(BigInteger, primary_key=True, index=True)
+    project_id     = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    metric_key     = Column(String(100), nullable=False)
+    baseline_mean  = Column(Numeric(10, 4), nullable=False)
+    current_mean   = Column(Numeric(10, 4), nullable=False)
+    drift_detected = Column(Boolean, default=False)
+    p_value        = Column(Numeric(6, 4), nullable=True)
+    drift_score    = Column(Numeric(6, 4), nullable=True)
+    status         = Column(String(50), default="healthy") # healthy | drift_warning | retrain_recommended
+    checked_at     = Column(TIMESTAMP, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_ml_drift_project_time", "project_id", "checked_at"),
+        {"extend_existing": True},
+    )
+
+

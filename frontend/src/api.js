@@ -147,4 +147,51 @@ export const api = {
     const qs = params.toString();
     return request(`/analytics/feedback/rows${qs ? "?" + qs : ""}`);
   },
+
+  // ---- ML Intelligence Platform ----
+  getMLStatus: () => request("/api/ml/status"),
+  getMLModels: () => request("/api/ml/models"),
+  getMLPerformance: () => request("/api/ml/performance"),
+  getMLPredictions: (projectId) => request(`/api/ml/predictions/${projectId}`),
+  getMLRecommendations: (projectId) => request(`/api/ml/recommendations/${projectId}`),
+  getMLAnomalies: (projectId) => request(`/api/ml/anomalies/${projectId}`),
+  getMLModules: (projectId) => request(`/api/ml/modules/${projectId}`),
+  getMLDrift: (projectId) => request(`/api/ml/drift/${projectId}`),
+  trainMLModels: (payload) =>
+    request("/api/ml/train", {
+      method: "POST",
+      body: JSON.stringify(payload || {}),
+    }),
+  predictML: (payload) =>
+    request("/api/ml/predict", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  // ---- Dataset-Specific ML Intelligence ----
+  trainDatasetModels: (payload) =>
+    request("/api/ml/dataset/train", {
+      method: "POST",
+      body: JSON.stringify(payload || {}),
+    }),
+  getDatasetStatus: () => request("/api/ml/dataset/status"),
+  getDatasetEvaluation: () => request("/api/ml/dataset/evaluation"),
+  getRefactoringComparison: () => request("/api/ml/dataset/comparison"),
+  getProcessDataStatus: () => request("/api/ml/dataset/process-status"),
+  getDevopsDataStatus: () => request("/api/ml/dataset/devops-status"),
+  predictDefectRisk: (features, modelName) =>
+    request("/api/ml/dataset/predict/defect", {
+      method: "POST",
+      body: JSON.stringify({ features, model_name: modelName || "auto" }),
+    }),
+  predictRefactoring: (features, datasetType, modelName) =>
+    request("/api/ml/dataset/predict/refactoring", {
+      method: "POST",
+      body: JSON.stringify({
+        features,
+        dataset_type: datasetType || "trivial",
+        model_name: modelName || "auto",
+      }),
+    }),
 };
+
