@@ -2,6 +2,8 @@
 
 An intelligent Software Metrics Prediction, Forecasting, and Recommendation System with closed-loop Machine Learning intelligence integrated into the Agentic Software Metrics Platform.
 
+[![GitHub](https://img.shields.io/badge/GitHub-sozhanrl%2FAgentic--Metrics-blue?style=flat-square&logo=github)](https://github.com/sozhanrl/Agentic-Metrics)
+
 ---
 
 ## 1. Executive Architecture Overview
@@ -10,6 +12,7 @@ This platform upgrades software engineering metrics monitoring into an intellige
 1. **Code Quality Intelligence**: Defect density forecasting, quality indicator prediction, module risk classification (Low / Medium / High), and unsupervised anomaly detection.
 2. **Process Intelligence**: Sprint velocity, cycle time, and lead time regression, ARIMA vs Moving Average time-series forecasting, and Little's Law WIP delivery delay risk.
 3. **DevOps Intelligence**: Deployment failure probability classification with strictly guarded pre-deployment features, Mean Time to Recovery (MTTR) regression, and deployment cadence anomaly detection.
+4. **Dataset-Driven Defect & Refactoring Classification**: Real ML models trained on three external datasets (`SoftwareDefectDataset.csv`, `OnlyTrivial_dt.csv`, `OnlyNonTrivial_dt.csv`) providing defect-prone module detection and refactoring pattern classification connected to the Observed Metrics Panel.
 
 ```
                            +-------------------------------------------------------------+
@@ -27,7 +30,9 @@ This platform upgrades software engineering metrics monitoring into an intellige
 |  | Telemetry Ingestion|   | Causal Prioritization|   | - /status   - /predictions   |  |
 |  | & Aggregations     |   | & Closed-Loop Memory |   | - /models   - /anomalies     |  |
 |  |                    |   |                      |   | - /train    - /drift         |  |
-|  +--------------------+   +----------------------+   +------------------------------+  |
+|  +--------------------+   +----------------------+   | - /dataset-models            |  |
+|                                                      | - /dataset-predict           |  |
+|                                                      +------------------------------+  |
 |                                                                  |                     |
 |                                         +------------------------+                     |
 |                                         v                                              |
@@ -41,6 +46,12 @@ This platform upgrades software engineering metrics monitoring into an intellige
 |  |  | - Isolation Forest     | | - Moving Average    | | - MTTR Regressor         | |  |
 |  |  | - Calibrated RF Clf    | | - Little's Law WIP  | | - Cadence Isolation F.   | |  |
 |  |  +------------------------+ +---------------------+ +--------------------------+ |  |
+|  |  +-----------------------------------------------------------------------------+ |  |
+|  |  | Dataset Classifiers (3 Datasets)                                            | |  |
+|  |  | - DefectClassifierPipeline     (SoftwareDefectDataset.csv)                  | |  |
+|  |  | - RefactoringClassifier Trivial (OnlyTrivial_dt.csv)                        | |  |
+|  |  | - RefactoringClassifier NonTrivial (OnlyNonTrivial_dt.csv)                  | |  |
+|  |  +-----------------------------------------------------------------------------+ |  |
 |  |  +-----------------------------------------------------------------------------+ |  |
 |  |  | Deep Learning Evaluator: Data sufficiency checks, LSTM/MLP justification   | |  |
 |  |  +-----------------------------------------------------------------------------+ |  |
@@ -109,6 +120,31 @@ This platform upgrades software engineering metrics monitoring into an intellige
 - **Anomaly Detection**:
   - Unsupervised `IsolationForest` detecting anomalous deployment cadence, sudden failure bursts, and unexpected recovery times.
 
+### D. Dataset-Driven Classification Pipelines (New)
+
+#### Dataset A: Software Defect Dataset (`app/ml/defect_classifier.py`)
+- **Source**: `SoftwareDefectDataset.csv` (Halstead & McCabe software metrics)
+- **Target**: `DEFECT_LABEL` (binary: 0 = non-defective, 1 = defective)
+- **Features**: `LOC`, `CYCLO`, `LENGTH`, `VOLUME`, `DIFFICULTY`, `INT_FAN_IN`, `INT_FAN_OUT`, `NUM_OPERATORS`, `NUM_OPERANDS`, `BRANCH_COUNT`
+- **Models Trained**:
+  - `RandomForestClassifier` — ensemble tree-based classification
+  - `XGBClassifier` — gradient boosted classification
+  - `LogisticRegression` — linear baseline
+  - `IsolationForest` — unsupervised anomaly detection on code metric distributions
+- **Validation**: Stratified K-Fold cross-validation with precision, recall, F1, ROC-AUC, confusion matrix
+
+#### Dataset B & C: Refactoring Classification (`app/ml/refactoring_classifier.py`)
+- **Sources**: `OnlyTrivial_dt.csv` (trivial refactorings) and `OnlyNonTrivial_dt.csv` (non-trivial refactorings)
+- **Target**: `refactoring` (binary: 0 = no refactoring, 1 = refactoring observed)
+- **Splitting Strategy**: Group-aware splitting by `class` column to prevent data leakage from related records belonging to the same Java class
+- **Models Trained** (per dataset):
+  - `RandomForestClassifier`
+  - `XGBClassifier`
+  - `LogisticRegression`
+  - `IsolationForest`
+- **Cross-Dataset Comparison**: `compare_trivial_vs_nontrivial()` function produces side-by-side evaluation metrics between trivial and non-trivial refactoring patterns
+- **Observed Metrics Panel Integration**: Model predictions feed directly into the frontend Observed Metrics Panel with per-model performance cards, confusion matrices, and feature importance charts
+
 ---
 
 ## 3. Deep Learning Strategy & Sufficiency Evaluation
@@ -152,6 +188,13 @@ All performance metrics below were computed from genuine cross-validation and ch
 | DevOps | Deployment Failure | Random Forest Clf | 0.3529 | 0.3000 | 0.3243 | 0.5980 | Evaluated |
 | **Code Quality** | Quality Anomaly | **Isolation Forest** | N/A | N/A | N/A | Unsupervised | Contamination = 0.08 |
 | **DevOps** | Cadence Anomaly | **Isolation Forest** | N/A | N/A | N/A | Unsupervised | Contamination = 0.05 |
+
+### Dataset Classification Metrics
+| Dataset | Target | Best Model | Accuracy | Precision | Recall | F1-Score | ROC-AUC | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **SoftwareDefectDataset** | Defect Label | **Random Forest / XGBoost** | Cross-validated | Per-class | Per-class | Per-class | Macro-avg | **Trained & Deployed** |
+| **OnlyTrivial_dt** | Refactoring | **Random Forest / XGBoost** | Group-split | Per-class | Per-class | Per-class | Macro-avg | **Trained & Deployed** |
+| **OnlyNonTrivial_dt** | Refactoring | **Random Forest / XGBoost** | Group-split | Per-class | Per-class | Per-class | Macro-avg | **Trained & Deployed** |
 
 ---
 
@@ -217,7 +260,91 @@ The platform architecture defines standard adapter interfaces for enterprise dat
 
 ---
 
-## 8. Installation & Setup Instructions
+## 8. Frontend Components
+
+The React (Vite) frontend is composed of 26 specialized components with dark glassmorphic design:
+
+| Component | Purpose |
+| :--- | :--- |
+| `App.jsx` | Main application shell, routing, and state management |
+| `Sidebar.jsx` | Navigation sidebar with section links |
+| `MetricCard.jsx` | Individual metric display card with sparklines |
+| `MetricDetailModal.jsx` | Detailed metric history modal with charts |
+| `MLIntelligencePanel.jsx` | ML model status, training controls, and performance display |
+| `DatasetMLPanel.jsx` | **Dataset ML results panel** — displays trained model results from all 3 CSV datasets with per-model cards, confusion matrices, feature importance, and cross-dataset comparisons |
+| `CodeQualityMLCards.jsx` | Code quality specific ML prediction cards |
+| `MLComponentDetailModal.jsx` | Detailed ML component drill-down modal |
+| `ProcessDevopsStatusBanner.jsx` | Process & DevOps pipeline status indicators |
+| `ExecutiveDashboard.jsx` | Executive summary with key KPIs and trends |
+| `RecommendationCard.jsx` | Evidence-backed recommendation display |
+| `HealthHero.jsx` | System health score hero component |
+| `AnomalyPanel.jsx` | Anomaly detection alerts panel |
+| `CausalGraphVisualizer.jsx` | Interactive causal dependency graph |
+| `FeedbackAnalytics.jsx` | Feedback analytics and learning curves |
+| `WhatIfSimulator.jsx` | What-If scenario simulation sandbox |
+| `AIAssistant.jsx` | AI assistant chat interface |
+| `RiskPredictor.jsx` | Risk prediction interface |
+| `AlertCenter.jsx` | Alert management center |
+| `TeamInsightsView.jsx` | Team performance insights |
+| `TimelineView.jsx` | Timeline visualization |
+| `ConstraintsPanel.jsx` | Constraints and thresholds configuration |
+| `RootCauseModal.jsx` | Root cause analysis modal |
+| `AIDecisionReplayModal.jsx` | AI decision replay and audit trail |
+| `SystemStatusIndicator.jsx` | System connectivity and health indicator |
+| `SkeletonLoader.jsx` | Loading skeleton animations |
+
+---
+
+## 9. Project Structure
+
+```
+metrics-agent/
+├── backend/
+│   ├── app/
+│   │   ├── main.py                     # FastAPI application entry point
+│   │   ├── models.py                   # SQLAlchemy ORM models
+│   │   ├── schemas.py                  # Pydantic request/response schemas
+│   │   ├── routers/
+│   │   │   ├── metrics.py              # Metrics CRUD & telemetry API
+│   │   │   ├── recommendations.py      # Recommendation engine API
+│   │   │   └── ml.py                   # ML intelligence API endpoints
+│   │   └── ml/
+│   │       ├── trainer.py              # ML platform coordinator & orchestrator
+│   │       ├── code_quality_pipeline.py # Code quality ML pipeline
+│   │       ├── process_pipeline.py     # Process intelligence ML pipeline
+│   │       ├── devops_pipeline.py      # DevOps intelligence ML pipeline
+│   │       ├── defect_classifier.py    # Dataset A: SoftwareDefectDataset classifier
+│   │       ├── refactoring_classifier.py # Datasets B&C: Trivial/NonTrivial refactoring
+│   │       ├── feature_engineering.py  # Shared feature engineering utilities
+│   │       ├── deep_learning_evaluator.py # DL sufficiency & strategy evaluator
+│   │       ├── recommendation_bridge.py # Explainable recommendation generator
+│   │       └── artifacts/              # Persisted model bundles (.joblib)
+│   ├── data/                           # Feedback & weight trajectory datasets
+│   ├── tests/                          # Pytest test suite
+│   ├── migrate_ml_intelligence.py      # Database migration script
+│   ├── requirements.txt                # Python dependencies
+│   └── .env                            # Environment configuration
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx                     # Main React application
+│   │   ├── App.css                     # Dark glassmorphic stylesheet
+│   │   ├── api.js                      # API client with all endpoints
+│   │   └── components/                 # 26 React components (see §8)
+│   ├── package.json                    # Node.js dependencies
+│   └── vite.config.js                  # Vite configuration
+├── db/                                 # Database connection & configuration
+├── PATENT_MECHANISM.md                 # Evidence-adaptive arbitration patent spec
+└── README.md                           # This file
+```
+
+**External Dataset Files** (resolved via relative paths from `trainer.py`):
+- `SoftwareDefectDataset.csv` — 184 KB, Halstead/McCabe software metrics with binary defect labels
+- `OnlyTrivial_dt.csv` — 51 MB, trivial refactoring classification dataset
+- `OnlyNonTrivial_dt.csv` — 115 MB, non-trivial refactoring classification dataset
+
+---
+
+## 10. Installation & Setup Instructions
 
 ### Prerequisites
 - Python 3.11 - 3.14
@@ -268,7 +395,7 @@ The platform architecture defines standard adapter interfaces for enterprise dat
 
 ---
 
-## 9. API Reference (`/api/ml`)
+## 11. API Reference (`/api/ml`)
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
@@ -282,12 +409,14 @@ The platform architecture defines standard adapter interfaces for enterprise dat
 | `GET` | `/api/ml/drift/{project_id}` | Feature and metric drift detection metrics |
 | `POST`| `/api/ml/train` | Triggers model retraining run across all pipelines (background capable) |
 | `POST`| `/api/ml/predict` | Real-time inference endpoint for custom telemetry feature payloads |
+| `GET` | `/api/ml/dataset-models` | Lists all trained dataset-specific models (defect, trivial, non-trivial) |
+| `POST`| `/api/ml/dataset-predict` | Run inference on dataset classifiers with custom feature payloads |
 
 ---
 
-## 10. Automated Test Suite
+## 12. Automated Test Suite
 
-Run the full automated test suite covering all 52 unit and integration tests:
+Run the full automated test suite covering all unit and integration tests:
 
 ```powershell
 cd metrics-agent/backend
@@ -299,7 +428,36 @@ cd metrics-agent/backend
 - **Chronological Data Splitting**: Strict validation that temporal order is preserved without future data leakage.
 - **Deep Learning Sufficiency Rules**: Verification that sequence length constraints ($N < 250$) trigger tree-ensemble selection and informative diagnostic messaging.
 - **Model Pipeline Training**: Convergence and evaluation of Code Quality, Process, and DevOps pipelines.
+- **Dataset Classifier Training**: End-to-end training and evaluation of defect and refactoring classifiers on real CSV data.
 - **DevOps Pre-Deployment Guardrails**: Target leakage prevention tests.
 - **Recommendation Evidence & Hypotheses**: Strict schema and empirical hypothesis validation.
-- **REST API Endpoints**: Status, models, performance, predictions, and module risk responses.
+- **REST API Endpoints**: Status, models, performance, predictions, dataset-models, and module risk responses.
 - **Closed-Loop Feedback & Health Scoring**: Regression tests ensuring all existing platform functions remain 100% operational.
+
+---
+
+## 13. Technology Stack
+
+| Layer | Technology |
+| :--- | :--- |
+| **Frontend** | React 19, Vite 6, Lucide React Icons |
+| **Backend** | Python 3.11+, FastAPI, Uvicorn |
+| **Database** | Neon PostgreSQL, SQLAlchemy ORM |
+| **ML/AI** | scikit-learn, XGBoost, statsmodels (ARIMA), joblib |
+| **Deep Learning** | PyTorch / Keras (gated by sufficiency evaluator) |
+| **Visualization** | CSS Glassmorphism, Sparklines, Confusion Matrices |
+
+---
+
+## 14. Patent & Intellectual Property
+
+The platform implements a novel **Evidence-Adaptive Arbitration Mechanism** for software metrics prioritization, documented in [`PATENT_MECHANISM.md`](PATENT_MECHANISM.md). Key innovations:
+- Dynamic computational resource routing between Bayesian and causal graph learning paths
+- Self-pruning causal graph optimization with automated edge retirement
+- Variance-weighted hybrid output stability and noise attenuation
+
+---
+
+## License
+
+This project is part of an academic and research initiative. See repository for details.
