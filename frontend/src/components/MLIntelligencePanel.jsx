@@ -261,18 +261,26 @@ export default function MLIntelligencePanel({ projectId, projects = [] }) {
                     let rmse = "—";
                     let r2OrF1 = "—";
 
-                    if (m.category === "code_quality") {
-                      mae = evalM.xgboost_regressor?.mae ?? "0.0743";
-                      rmse = evalM.xgboost_regressor?.rmse ?? "0.0883";
-                      r2OrF1 = `F1: ${(evalM.risk_classifier?.f1 ?? 0.2543).toFixed(4)}`;
+                    if (m.model_id === "defect_classifier") {
+                      mae = "— (Classification)";
+                      rmse = "— (Classification)";
+                      r2OrF1 = evalM.champion_f1 ? `F1: ${Number(evalM.champion_f1).toFixed(4)}` : "—";
+                    } else if (m.model_id === "refactoring_trivial" || m.model_id === "refactoring_nontrivial") {
+                      mae = "— (Classification)";
+                      rmse = "— (Classification)";
+                      r2OrF1 = evalM.champion_f1 ? `F1: ${Number(evalM.champion_f1).toFixed(4)}` : "—";
+                    } else if (m.category === "code_quality") {
+                      mae = evalM.xgboost_regressor?.mae !== undefined ? evalM.xgboost_regressor.mae.toFixed(4) : "—";
+                      rmse = evalM.xgboost_regressor?.rmse !== undefined ? evalM.xgboost_regressor.rmse.toFixed(4) : "—";
+                      r2OrF1 = evalM.risk_classifier?.f1 !== undefined ? `F1: ${Number(evalM.risk_classifier.f1).toFixed(4)}` : "—";
                     } else if (m.category === "process") {
-                      mae = evalM.xgboost_regressor?.mae ?? "0.6076";
-                      rmse = evalM.xgboost_regressor?.rmse ?? "0.7583";
-                      r2OrF1 = `R²: ${(evalM.xgboost_regressor?.r2 ?? 0.5645).toFixed(4)}`;
+                      mae = evalM.xgboost_regressor?.mae !== undefined ? evalM.xgboost_regressor.mae.toFixed(4) : "—";
+                      rmse = evalM.xgboost_regressor?.rmse !== undefined ? evalM.xgboost_regressor.rmse.toFixed(4) : "—";
+                      r2OrF1 = evalM.xgboost_regressor?.r2 !== undefined ? `R²: ${Number(evalM.xgboost_regressor.r2).toFixed(4)}` : "—";
                     } else if (m.category === "devops") {
-                      mae = `MTTR: ${evalM.mttr_regressor?.mae ?? "0.3482"}`;
-                      rmse = evalM.mttr_regressor?.rmse ?? "0.3942";
-                      r2OrF1 = `F1: ${(evalM.xgboost_classifier?.f1 ?? 0.3352).toFixed(4)}`;
+                      mae = evalM.mttr_regressor?.mae !== undefined ? `MTTR: ${evalM.mttr_regressor.mae.toFixed(4)}` : "—";
+                      rmse = evalM.mttr_regressor?.rmse !== undefined ? evalM.mttr_regressor.rmse.toFixed(4) : "—";
+                      r2OrF1 = evalM.xgboost_classifier?.f1 !== undefined ? `F1: ${Number(evalM.xgboost_classifier.f1).toFixed(4)}` : "—";
                     }
 
                     return (

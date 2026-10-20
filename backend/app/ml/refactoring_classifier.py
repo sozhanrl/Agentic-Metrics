@@ -440,6 +440,7 @@ class RefactoringClassifierPipeline:
             "prediction": pred,
             "prediction_label": LABEL_NAMES.get(pred, "Unknown"),
             "probability": round(prob, 4),
+            "refactoring_probability": round(prob, 4),
             "model_used": model_name,
             "dataset_type": self.dataset_label,
             "is_anomaly": is_anomaly,

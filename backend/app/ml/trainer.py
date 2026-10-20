@@ -465,6 +465,40 @@ class MLPlatformCoordinator:
                     )
                 )
 
+            # 1b. Software Defect Classifier Prediction (SoftwareDefectDataset.csv models)
+            if self.defect_classifier.load_bundle():
+                comp_features = {
+                    "LOC": min(1.0, max(0.0, metrics_map.get("code_churn", 20.0) / 40.0)),
+                    "CYCLO": min(1.0, max(0.0, metrics_map.get("cyclomatic_complexity", 14.0) / 30.0)),
+                    "LENGTH": min(1.0, max(0.0, (metrics_map.get("cyclomatic_complexity", 14.0) * 3) / 100.0)),
+                    "VOLUME": min(1.0, max(0.0, (metrics_map.get("code_churn", 20.0) * 2.5) / 100.0)),
+                    "DIFFICULTY": min(1.0, max(0.0, (metrics_map.get("cyclomatic_complexity", 14.0) / 25.0))),
+                    "INT_FAN_IN": 0.5,
+                    "INT_FAN_OUT": 0.5,
+                    "NUM_OPERATORS": min(1.0, max(0.0, metrics_map.get("cyclomatic_complexity", 14.0) / 28.0)),
+                    "NUM_OPERANDS": min(1.0, max(0.0, metrics_map.get("code_churn", 20.0) / 38.0)),
+                    "BRANCH_COUNT": min(1.0, max(0.0, metrics_map.get("cyclomatic_complexity", 14.0) / 25.0)),
+                }
+                defect_res = self.defect_classifier.predict(comp_features)
+                if "error" not in defect_res:
+                    prob = defect_res["defect_probability"]
+                    self.db.add(
+                        models.MLPrediction(
+                            project_id=proj.id,
+                            model_id="defect_classifier",
+                            category="code_quality",
+                            target_metric="predicted_defect_risk",
+                            current_value=metrics_map.get("predicted_defect_risk", 0.32),
+                            predicted_value=round(prob * 100.0, 2),
+                            horizon="Evaluated Component",
+                            lower_bound=round(max(0.0, (prob - 0.08) * 100.0), 2),
+                            upper_bound=round(min(100.0, (prob + 0.08) * 100.0), 2),
+                            confidence=0.88,
+                            risk_level=defect_res["risk_category"].lower(),
+                            feature_contributions=defect_res.get("top_contributing_factors"),
+                        )
+                    )
+
             # 2. Process Prediction
             proc_res = self.process.predict(metrics_map)
             if "error" not in proc_res:

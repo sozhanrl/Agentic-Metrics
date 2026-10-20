@@ -4230,4 +4230,408 @@
   }
 }
 
+/* ==========================================================================
+   ML Intelligence Feature Cards & Observed Metrics Panel Extensions
+   ========================================================================== */
+.ml-feature-subheading {
+  margin-top: 18px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  border-radius: var(--radius-md);
+}
+
+.ml-subheading-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: #a5b4fc;
+}
+
+.ml-subheading-tag {
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  background: rgba(99, 102, 241, 0.2);
+  color: #c7d2fe;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.ml-feature-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.ml-intelligence-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+  border: 1px solid rgba(99, 102, 241, 0.25) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.ml-intelligence-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.5) !important;
+}
+
+.card-badge-icon {
+  margin-right: 6px;
+}
+
+.component-path-tag {
+  margin-top: 6px;
+}
+
+.component-path-tag code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.top-contributors-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.contrib-label {
+  font-size: 9.5px;
+  color: var(--text-muted);
+}
+
+.contrib-pill {
+  font-size: 9px;
+  font-family: var(--font-mono);
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.semantics-warning-note {
+  font-size: 11px;
+  color: #cbd5e1;
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 2px solid #f59e0b;
+  padding: 4px 8px;
+  border-radius: 0 4px 4px 0;
+  margin: 6px 0 0;
+  line-height: 1.35;
+}
+
+.metric-meta-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.metric-eval-badge {
+  font-size: 9.5px;
+  font-family: var(--font-mono);
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.metric-inspect-action {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent-primary);
+  transition: color 0.15s ease;
+}
+
+.metric-inspect-action:hover {
+  color: #93c5fd;
+  text-decoration: underline;
+}
+
+.telemetry-only-note {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+/* Process & DevOps Status Notices */
+.process-devops-empty-card {
+  margin-top: 14px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px dashed rgba(245, 158, 11, 0.35);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+}
+
+.empty-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.empty-card-icon {
+  font-size: 20px;
+}
+
+.empty-card-title {
+  margin: 0;
+  font-size: 13.5px;
+  color: #fbbf24;
+}
+
+.empty-card-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.empty-card-message {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #cbd5e1;
+  margin: 6px 0 10px;
+}
+
+.empty-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.empty-card-tag {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 3px 8px;
+  border-radius: 4px;
+  color: var(--text-muted);
+}
+
+.btn-seed-banner {
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fde68a;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-seed-banner:hover {
+  background: rgba(245, 158, 11, 0.35);
+}
+
+.process-devops-ready-banner {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: #a7f3d0;
+}
+
+.process-devops-ready-banner .banner-icon {
+  font-weight: 900;
+  font-size: 14px;
+  color: #34d399;
+}
+
+/* ML Component Detail Modal */
+.modal-subnav {
+  display: flex;
+  gap: 8px;
+  padding: 10px 24px 0;
+  background: rgba(15, 23, 42, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.subnav-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.subnav-btn.active {
+  color: #818cf8;
+  border-bottom-color: #818cf8;
+}
+
+.dataset-meta-banner {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.dmb-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dmb-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.dmb-val {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.semantics-callout {
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid #ef4444;
+  padding: 10px 14px;
+  border-radius: 0 6px 6px 0;
+  font-size: 12px;
+  color: #fca5a5;
+  line-height: 1.45;
+  margin-bottom: 16px;
+}
+
+.semantics-callout code {
+  color: #fee2e2;
+  font-family: var(--font-mono);
+}
+
+.ml-modal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.ml-modal-table th {
+  text-align: left;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ml-modal-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+}
+
+.ml-modal-table .champion-row {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.interactive-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.5);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ifg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ifg-field label {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.ifg-field input {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 12px;
+  color: #fff;
+}
+
+.predict-inline-badge {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.predict-inline-badge.high { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+.predict-inline-badge.medium { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+.predict-inline-badge.nominal { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+.anomalies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.anomaly-item-box {
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  border-left: 3px solid #f43f5e;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+
+.aib-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.aib-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: #fecdd3;
+}
+
+.aib-score {
+  font-size: 11px;
+  color: #fb7185;
+  font-weight: 600;
+}
+
+.aib-desc {
+  margin: 0;
+  font-size: 11.5px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+
 

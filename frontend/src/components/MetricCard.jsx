@@ -1,6 +1,12 @@
 import React from "react";
 
-export default function MetricCard({ metric, history = [], prediction = null, onClick }) {
+export default function MetricCard({
+  metric,
+  history = [],
+  prediction = null,
+  modelInfo = null,
+  onClick,
+}) {
   // Compute change from previous observation if history has at least 2 points
   let changePct = null;
   if (history && history.length >= 2) {
@@ -14,11 +20,26 @@ export default function MetricCard({ metric, history = [], prediction = null, on
   // Derive risk badge
   let riskStatus = "nominal";
   if (prediction?.risk_level) {
-    riskStatus = prediction.risk_level;
+    riskStatus = prediction.risk_level.toLowerCase();
   } else if (metric.higher_is_better) {
     if (changePct !== null && changePct < -10) riskStatus = "warning";
   } else {
     if (changePct !== null && changePct > 10) riskStatus = "warning";
+  }
+
+  // Model evaluation summary string
+  let evalScoreStr = null;
+  if (modelInfo?.evaluation_metrics) {
+    const em = modelInfo.evaluation_metrics;
+    if (em.f1 !== undefined) {
+      evalScoreStr = `F1: ${Number(em.f1).toFixed(3)}`;
+    } else if (em.champion_f1 !== undefined) {
+      evalScoreStr = `F1: ${Number(em.champion_f1).toFixed(3)}`;
+    } else if (em.xgboost_regressor?.mae !== undefined) {
+      evalScoreStr = `MAE: ${Number(em.xgboost_regressor.mae).toFixed(3)}`;
+    } else if (em.random_forest?.f1 !== undefined) {
+      evalScoreStr = `F1: ${Number(em.random_forest.f1).toFixed(3)}`;
+    }
   }
 
   const renderSparkline = () => {
@@ -31,10 +52,11 @@ export default function MetricCard({ metric, history = [], prediction = null, on
             alignItems: "center",
             justifyContent: "center",
             color: "var(--text-muted)",
-            fontSize: "10px",
+            fontSize: "11px",
+            fontStyle: "italic",
           }}
         >
-          No history yet
+          No historical observation chart
         </div>
       );
     }
@@ -70,8 +92,16 @@ export default function MetricCard({ metric, history = [], prediction = null, on
     );
   };
 
+  const hasPrediction = prediction && prediction.predicted_value !== undefined && prediction.target_metric === metric.metric_key;
+
   return (
-    <div className={`metric-card ${riskStatus}`} onClick={onClick} role="button" tabIndex={0}>
+    <div
+      className={`metric-card ${riskStatus}`}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      title="Click to view detailed observations, forecast interval & model provenance"
+    >
       <div className="metric-header-row">
         <div className="metric-name">{metric.display_name}</div>
         <span className={`metric-risk-pill ${riskStatus}`}>
@@ -79,9 +109,14 @@ export default function MetricCard({ metric, history = [], prediction = null, on
         </span>
       </div>
 
-      {/* Observed Measurement */}
+      {/* Observed Telemetry Section */}
       <div className="metric-observation-section">
-        <div className="metric-observation-label">Observed Telemetry</div>
+        <div className="metric-observation-label">
+          <span>Actual Observed Telemetry</span>
+          <span className="metric-target-type">
+            {metric.higher_is_better ? "Higher Better ↑" : "Lower Better ↓"}
+          </span>
+        </div>
         <div className="metric-value">
           {metric.value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
           <span className="metric-unit">{metric.unit}</span>
@@ -93,19 +128,27 @@ export default function MetricCard({ metric, history = [], prediction = null, on
         </div>
       </div>
 
-      {/* Predicted ML Forecast (Clearly distinguished) */}
-      <div className="metric-prediction-box">
+      {/* ML Prediction Section — Distinctly Styled */}
+      <div className={`metric-prediction-box ${hasPrediction ? "active-pred" : "telemetry-only"}`}>
         <div className="metric-prediction-label">
-          <span>🔮 ML Forecast</span>
-          <span className="metric-horizon">({prediction?.horizon || "Next Cycle"})</span>
+          <span>🔮 ML Prediction</span>
+          <span className="metric-horizon">
+            {hasPrediction ? `(${prediction.horizon || "Next Cycle"})` : "(No target model)"}
+          </span>
         </div>
         <div className="metric-predicted-val">
-          {prediction?.predicted_value !== undefined
-            ? `${prediction.predicted_value.toFixed(2)} ${metric.unit || ""}`
-            : "Model Initialized"}
-          {prediction?.lower_bound !== undefined && (
-            <span className="metric-prediction-ci">
-              [{prediction.lower_bound.toFixed(1)} - {prediction.upper_bound.toFixed(1)}]
+          {hasPrediction ? (
+            <>
+              {prediction.predicted_value.toFixed(2)} {metric.unit || ""}
+              {prediction.lower_bound !== undefined && (
+                <span className="metric-prediction-ci">
+                  CI: [{prediction.lower_bound.toFixed(1)} - {prediction.upper_bound.toFixed(1)}]
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="telemetry-only-note">
+              Telemetry Input &bull; Not a trained target
             </span>
           )}
         </div>
@@ -113,15 +156,23 @@ export default function MetricCard({ metric, history = [], prediction = null, on
 
       {renderSparkline()}
 
+      {/* Model & Evaluation Meta */}
       <div className="metric-meta-footer">
-        <span className="metric-updated">
-          Updated {new Date(metric.recorded_at).toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-          })}
-        </span>
-        <span className="metric-status-badge">
-          {prediction ? "✓ ML Projected" : "● Telemetry Ready"}
+        <div className="metric-meta-left">
+          <span className="metric-updated">
+            Updated {new Date(metric.recorded_at).toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+            })}
+          </span>
+          {evalScoreStr && (
+            <span className="metric-eval-badge" title="Empirical model validation metric">
+              {evalScoreStr}
+            </span>
+          )}
+        </div>
+        <span className="metric-inspect-action">
+          Inspect Details &rarr;
         </span>
       </div>
     </div>

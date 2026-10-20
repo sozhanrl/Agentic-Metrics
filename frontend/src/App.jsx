@@ -20,6 +20,9 @@ import ApiErrorState from "./components/ApiErrorState";
 import MLIntelligencePanel from "./components/MLIntelligencePanel";
 import MetricDetailModal from "./components/MetricDetailModal";
 import DatasetMLPanel from "./components/DatasetMLPanel";
+import CodeQualityMLCards from "./components/CodeQualityMLCards";
+import { ProcessDataNotice, DevopsDataNotice } from "./components/ProcessDevopsStatusBanner";
+import MLComponentDetailModal from "./components/MLComponentDetailModal";
 import { api } from "./api";
 import "./App.css";
 
@@ -85,12 +88,28 @@ export default function App() {
   const [weightLens, setWeightLens] = useState(null);
   const [weightLensLoading, setWeightLensLoading] = useState(false);
 
+  // ML Intelligence & Status
+  const [processStatus, setProcessStatus] = useState(null);
+  const [devopsStatus, setDevopsStatus] = useState(null);
+  const [mlModalType, setMlModalType] = useState(null);
+
   const loadProjectData = useCallback(async (projectId) => {
     if (!projectId) return;
     setLoading(true);
     setError(null);
     try {
-      const [metricsData, recsData, historyData, healthRes, anomRes, alertsRes, mlPredsRes, mlModelsRes] = await Promise.all([
+      const [
+        metricsData,
+        recsData,
+        historyData,
+        healthRes,
+        anomRes,
+        alertsRes,
+        mlPredsRes,
+        mlModelsRes,
+        procStatusRes,
+        devopsStatusRes,
+      ] = await Promise.all([
         api.getLatestMetrics(projectId),
         api.getRecommendations(projectId),
         api.getAllMetricsHistory(projectId).catch(() => ({})),
@@ -99,6 +118,8 @@ export default function App() {
         api.getAlerts(projectId, true).catch(() => []),
         api.getMLPredictions(projectId).catch(() => []),
         api.getMLModels().catch(() => []),
+        api.getProcessDataStatus().catch(() => null),
+        api.getDevopsDataStatus().catch(() => null),
       ]);
       setMetrics(metricsData || []);
       setRecommendations(recsData || []);
@@ -109,6 +130,8 @@ export default function App() {
       setAiEnabled(recsData?.some((r) => r.ai_narrated));
       setMlPredictions(mlPredsRes || []);
       setMlModels(mlModelsRes || []);
+      setProcessStatus(procStatusRes);
+      setDevopsStatus(devopsStatusRes);
 
     } catch (e) {
       console.error("API error loading project data:", e);
@@ -671,7 +694,10 @@ export default function App() {
                     <div className="metric-grid">
                       {list.map((m) => {
                         const pred = mlPredictions.find(
-                          (p) => p.target_metric === m.metric_key || p.category === m.category
+                          (p) => p.target_metric === m.metric_key
+                        );
+                        const modelInfo = mlModels.find(
+                          (mod) => mod.target_metric === m.metric_key
                         );
                         return (
                           <MetricCard
@@ -679,11 +705,46 @@ export default function App() {
                             metric={m}
                             history={metricsHistory[m.metric_id] || []}
                             prediction={pred}
+                            modelInfo={modelInfo}
                             onClick={() => setSelectedMetric(m)}
                           />
                         );
                       })}
                     </div>
+
+                    {/* Code Quality ML Intelligence Cards */}
+                    {category === "code_quality" && (
+                      <div className="ml-feature-subheading">
+                        <div className="ml-subheading-title">
+                          <span>🧠 Code Quality ML Models & Intelligence</span>
+                          <span className="ml-subheading-tag">Real Datasets (SoftwareDefect, OnlyTrivial, OnlyNonTrivial)</span>
+                        </div>
+                        <CodeQualityMLCards
+                          defectModel={mlModels.find((m) => m.model_id === "defect_classifier")}
+                          trivialModel={mlModels.find((m) => m.model_id === "refactoring_trivial")}
+                          nontrivialModel={mlModels.find((m) => m.model_id === "refactoring_nontrivial")}
+                          onOpenDefectDetail={() => setMlModalType("defect")}
+                          onOpenRefactoringDetail={() => setMlModalType("refactoring")}
+                          onOpenAnomalyDetail={() => setMlModalType("anomaly")}
+                        />
+                      </div>
+                    )}
+
+                    {/* Process Empty State / Notice */}
+                    {category === "process" && (
+                      <ProcessDataNotice
+                        status={processStatus}
+                        onSeedDemo={handleSeed}
+                      />
+                    )}
+
+                    {/* DevOps Empty State / Notice */}
+                    {category === "devops" && (
+                      <DevopsDataNotice
+                        status={devopsStatus}
+                        onSeedDemo={handleSeed}
+                      />
+                    )}
                   </div>
                 ))}
               </section>
@@ -692,15 +753,26 @@ export default function App() {
         )}
       </main>
 
+      {/* ML Component Detail Modal for Defect Risk, Refactoring, and Anomalies */}
+      {mlModalType && (
+        <MLComponentDetailModal
+          type={mlModalType}
+          defectModel={mlModels.find((m) => m.model_id === "defect_classifier")}
+          trivialModel={mlModels.find((m) => m.model_id === "refactoring_trivial")}
+          nontrivialModel={mlModels.find((m) => m.model_id === "refactoring_nontrivial")}
+          onClose={() => setMlModalType(null)}
+        />
+      )}
+
       {/* Metric Detail Modal with ML Forecasts & Explainability */}
       {selectedMetric && (
         <MetricDetailModal
           metric={selectedMetric}
           history={metricsHistory[selectedMetric.metric_id] || []}
           prediction={mlPredictions.find(
-            (p) => p.target_metric === selectedMetric.metric_key || p.category === selectedMetric.category
+            (p) => p.target_metric === selectedMetric.metric_key
           )}
-          modelInfo={mlModels.find((m) => m.category === selectedMetric.category)}
+          modelInfo={mlModels.find((m) => m.target_metric === selectedMetric.metric_key || m.category === selectedMetric.category)}
           onClose={() => setSelectedMetric(null)}
           onOpenRootCause={(key) => setRootCauseMetric(key)}
         />

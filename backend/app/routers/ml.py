@@ -229,6 +229,150 @@ def get_drift_status(project_id: int, db: Session = Depends(get_db)):
     return drift_rows
 
 
+@router.get("/training-history", response_model=List[schemas.TrainingRunResponse])
+def get_training_history(
+    limit: int = Query(50, ge=1, le=200),
+    db: Session = Depends(get_db),
+):
+    """Returns chronological training run history with evaluation metrics and duration."""
+    runs = (
+        db.query(models.MLTrainingRun)
+        .order_by(desc(models.MLTrainingRun.created_at))
+        .limit(limit)
+        .all()
+    )
+    return runs
+
+
+@router.get("/predictions/{project_id}/trajectory")
+def get_prediction_trajectory(
+    project_id: int,
+    target_metric: Optional[str] = Query(None),
+    limit: int = Query(30, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    """
+    Returns historical prediction trajectory for a project, showing how
+    predictions evolved over time with confidence intervals.
+    Used for forecast trend visualization.
+    """
+    query = (
+        db.query(models.MLPrediction)
+        .filter(models.MLPrediction.project_id == project_id)
+        .order_by(models.MLPrediction.created_at.asc())
+    )
+    if target_metric:
+        query = query.filter(models.MLPrediction.target_metric == target_metric)
+
+    preds = query.limit(limit).all()
+
+    # Group by target_metric for multi-line chart
+    trajectory = {}
+    for p in preds:
+        key = p.target_metric
+        if key not in trajectory:
+            trajectory[key] = []
+        trajectory[key].append({
+            "target_metric": p.target_metric,
+            "category": p.category,
+            "predicted_value": float(p.predicted_value),
+            "current_value": float(p.current_value) if p.current_value else None,
+            "lower_bound": float(p.lower_bound) if p.lower_bound else None,
+            "upper_bound": float(p.upper_bound) if p.upper_bound else None,
+            "confidence": float(p.confidence) if p.confidence else 0.85,
+            "risk_level": p.risk_level,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+        })
+
+    return trajectory
+
+
+@router.get("/comparison", response_model=List[schemas.ModelComparisonResponse])
+def get_model_comparison(db: Session = Depends(get_db)):
+    """
+    Returns a structured comparison of all models with flattened evaluation metrics
+    for radar chart and bar chart visualization.
+    """
+    regs = db.query(models.MLModelRegistry).all()
+    results = []
+
+    for r in regs:
+        eval_m = r.evaluation_metrics or {}
+        # Extract flat metrics from the nested evaluation_metrics JSONB
+        mae = None
+        rmse = None
+        r2 = None
+        f1 = None
+        roc_auc = None
+        precision = None
+        recall = None
+        train_samples = None
+
+        # Code Quality models
+        if r.category == "code_quality":
+            xgb = eval_m.get("xgboost_regressor", {})
+            rf = eval_m.get("random_forest_regressor", {})
+            clf = eval_m.get("risk_classifier", {})
+            mae = xgb.get("mae") or rf.get("mae")
+            rmse = xgb.get("rmse") or rf.get("rmse")
+            r2 = xgb.get("r2") or rf.get("r2")
+            f1 = clf.get("f1")
+            roc_auc = clf.get("roc_auc")
+            precision = clf.get("precision")
+            recall = clf.get("recall")
+
+        # Process models
+        elif r.category == "process":
+            xgb = eval_m.get("xgboost_regressor", {})
+            rf = eval_m.get("random_forest_regressor", {})
+            mae = xgb.get("mae") or rf.get("mae")
+            rmse = xgb.get("rmse") or rf.get("rmse")
+            r2 = xgb.get("r2") or rf.get("r2")
+
+        # DevOps models
+        elif r.category == "devops":
+            xgb_clf = eval_m.get("xgboost_classifier", {})
+            rf_clf = eval_m.get("random_forest_classifier", {})
+            mttr = eval_m.get("mttr_regressor", {})
+            mae = mttr.get("mae")
+            rmse = mttr.get("rmse")
+            r2 = mttr.get("r2")
+            f1 = xgb_clf.get("f1") or rf_clf.get("f1")
+            roc_auc = xgb_clf.get("roc_auc") or rf_clf.get("roc_auc")
+            precision = xgb_clf.get("precision") or rf_clf.get("precision")
+            recall = xgb_clf.get("recall") or rf_clf.get("recall")
+
+        # Get training run info
+        last_run = (
+            db.query(models.MLTrainingRun)
+            .filter(models.MLTrainingRun.model_id == r.model_id)
+            .order_by(desc(models.MLTrainingRun.created_at))
+            .first()
+        )
+        if last_run:
+            train_samples = last_run.train_samples
+
+        results.append(schemas.ModelComparisonResponse(
+            model_id=r.model_id,
+            name=r.name,
+            category=r.category,
+            algorithm=r.algorithm,
+            target_metric=r.target_metric,
+            mae=mae,
+            rmse=rmse,
+            r2=r2,
+            f1=f1,
+            roc_auc=roc_auc,
+            precision=precision,
+            recall=recall,
+            training_samples=train_samples,
+            feature_count=len(r.features) if r.features else None,
+            status=r.status,
+        ))
+
+    return results
+
+
 @router.post("/train")
 def train_models(payload: schemas.MLTrainRequest = schemas.MLTrainRequest(), db: Session = Depends(get_db)):
     """

@@ -172,21 +172,27 @@ export default function MetricDetailModal({
                 <span className="spec-val">{modelInfo?.version || "2.0.0"}</span>
               </div>
               <div className="spec-row">
-                <span className="spec-label">Validation MAE:</span>
+                <span className="spec-label">Algorithm:</span>
+                <span className="spec-val">
+                  {modelInfo?.algorithm || "Machine Learning Estimator"}
+                </span>
+              </div>
+              <div className="spec-row">
+                <span className="spec-label">Validation Metric:</span>
                 <span className="spec-val highlight-cyan">
-                  {modelInfo?.evaluation_metrics?.xgboost_regressor?.mae ?? "0.0743"}
+                  {modelInfo?.evaluation_metrics?.champion_f1 !== undefined
+                    ? `Champion F1: ${Number(modelInfo.evaluation_metrics.champion_f1).toFixed(4)}`
+                    : modelInfo?.evaluation_metrics?.xgboost_regressor?.mae !== undefined
+                    ? `MAE: ${Number(modelInfo.evaluation_metrics.xgboost_regressor.mae).toFixed(4)}`
+                    : modelInfo?.evaluation_metrics?.f1 !== undefined
+                    ? `F1: ${Number(modelInfo.evaluation_metrics.f1).toFixed(4)}`
+                    : "Empirical Split Evaluated"}
                 </span>
               </div>
               <div className="spec-row">
-                <span className="spec-label">Validation RMSE:</span>
+                <span className="spec-label">Confidence:</span>
                 <span className="spec-val">
-                  {modelInfo?.evaluation_metrics?.xgboost_regressor?.rmse ?? "0.0883"}
-                </span>
-              </div>
-              <div className="spec-row">
-                <span className="spec-label">Confidence Level:</span>
-                <span className="spec-val">
-                  {prediction ? `${(prediction.confidence * 100).toFixed(0)}%` : "88%"}
+                  {prediction?.confidence !== undefined ? `${(prediction.confidence * 100).toFixed(0)}%` : "Evaluated"}
                 </span>
               </div>
             </div>

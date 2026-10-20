@@ -740,5 +740,52 @@ class RefactoringPredictRequest(BaseModel):
     model_name: Optional[str] = "auto"
 
 
+# ---------- Training History & Trajectory Schemas ----------
+
+class TrainingRunResponse(BaseModel):
+    id: int
+    model_id: str
+    project_id: Optional[int] = None
+    status: str
+    train_samples: int
+    test_samples: int
+    metrics_json: Optional[dict] = None
+    duration_ms: int = 0
+    error_message: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
 
 
+class PredictionTrajectoryPoint(BaseModel):
+    target_metric: str
+    category: str
+    predicted_value: float
+    current_value: Optional[float] = None
+    lower_bound: Optional[float] = None
+    upper_bound: Optional[float] = None
+    confidence: float = 0.85
+    risk_level: str = "low"
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ModelComparisonResponse(BaseModel):
+    model_id: str
+    name: str
+    category: str
+    algorithm: str
+    target_metric: str
+    mae: Optional[float] = None
+    rmse: Optional[float] = None
+    r2: Optional[float] = None
+    f1: Optional[float] = None
+    roc_auc: Optional[float] = None
+    precision: Optional[float] = None
+    recall: Optional[float] = None
+    training_samples: Optional[int] = None
+    feature_count: Optional[int] = None
+    status: str = "ready"
